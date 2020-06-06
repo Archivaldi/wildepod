@@ -39,6 +39,10 @@ app.use(session({ secret: keys.secret.secret, cookie: { maxAge: 1 * 1000 * 60 * 
 
 app.use(bodyParser.urlencoded({ extended: true }));
 
+if (process.env.NODE_ENV === "production"){
+    app.use(express.static(__dirname + '/public'));
+};
+
 app.use(express.static(__dirname + '/public'));
 
 app.use((req, res, next) => {
@@ -1010,6 +1014,12 @@ app.get("/connect_camera", (req,res) => {
         };
     });
 });
+
+if (process.env.NODE_ENV === "production"){
+    app.get("*", (req,res) => {
+        res.sendFile(path.join(__dirname, "./views/index.ejs"));
+    });
+};
 
 //all other pages
 app.get("*", (req,res) => {

@@ -22,3 +22,12 @@
             </div> 
         <% } %>
 </div>
+
+/Users/archivaldi/Downloads/
+
+LOAD DATA LOCAL INFILE  '/Users/archivaldi/Downloads/List_of_Uploads_for_Felidae_DB.csv' INTO TABLE uploads
+FIELDS TERMINATED BY ',' 
+ENCLOSED BY '"'
+LINES TERMINATED BY '\n'
+IGNORE 1 ROWS
+(upload_id, provider, site_id, location_id, camera_id, memorystick_id, user_id, upload_date, number_of_images);

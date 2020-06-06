@@ -1,0 +1,174 @@
+<% include ../../../partials/header %>
+<div class="container">
+    <div class="row">
+        <div class="col-md-2">
+            <p><b>Location name</b></p>
+        </div>
+        <div class="col-md-1">
+            <p><b>Latitude</b></p>
+        </div>
+        <div class="col-md-1">
+            <p><b>Longitude</b></p>
+        </div>
+        <div class="col-md-2">
+            <p><b>Trail type</b></p>
+        </div>
+        <div class="col-md-2">
+            <p><b>Status</b></p>
+        </div>
+        <div class="col-md-4">
+            <p class="text-center"><b>Action</b></p>
+        </div>
+    </div>
+
+    <% for (let i = 0; i < result.length; i++) {%>
+        <div class="row">
+            <div class="col-md-2">
+                <p><%= result[i].location_name %></p>
+            </div>
+            <div class="col-md-1">
+                <p><%= result[i].latitude %></p>
+            </div>
+            <div class="col-md-1">
+                <p><%= result[i].longitude %></p>
+            </div>
+            <div class="col-md-1">
+                <p><%= result[i].trail_type %></p>
+            </div>
+            <div class="col-md-1">
+                <p><%= result[i].location_status %></p>
+            </div>
+            <div class="col-md-2">
+                <button class="onePointMap" data="<%= result[i].location_id%>">Show on a map</button>
+            </div>
+            <div class="col-md-1">
+                <form class="text-center" action="/properties/<%=result[0].site_id%>/update_location/<%= result[i].location_id%>" method="POST">
+                    <button>Update</button>
+                </form> 
+            </div>
+            <div class="col-md-1">
+                <form  class="text-center" action="/properties/<%=result[0].site_id%>/delete_location/<%= result[i].location_id%>" method="POST">
+                    <button>Delete</button>
+                </form>
+            </div>
+        </div>
+    <% } %>
+
+    <div class="row">
+        <div class="col-md-12">
+            <form class="text-center" action="/properties/<%=result[0].site_id%>/create_location">
+                <button>Create new location</button>
+            </form>
+        </div>
+    </div>
+    <button id="getMap" value="<%= result[0].site_id %>">Show on a map</button>
+    <div class="row">
+        <div class="col-md-4" style="height: 50rem; overflow: scroll;" id="options"></div>
+        <div class="col-md-8" id="myMap" style='position:relative;width:100%;height:50rem; margin-bottom: 35px;' ></div>
+    </div>
+</div>
+
+<script type="text/javascript">
+
+$("#getMap").on("click", () => {
+    $("#options").empty();
+        $.ajax({
+            url: `locations_map`,
+            method: "POST"
+        }).then(async r => {
+            var map = await new Microsoft.Maps.Map('#myMap', {
+                mapTypeId: Microsoft.Maps.MapTypeId.aerial
+            });
+            let locations = [];
+        for (let i = 0; i < r.length; i++){
+                    var loc = new Microsoft.Maps.Location(
+                        r[i].latitude,
+                        r[i].longitude);
+
+                    //Add a pushpin at the user's location.
+                    var pin = new Microsoft.Maps.Pushpin(loc, {
+                        title: r[i].location_name,
+                        color: "pink"
+                    });
+                    await map.entities.push(pin);
+                    Microsoft.Maps.Events.addHandler(pin, 'mouseover', function (e) {
+                        e.target.setOptions({ color: "red" });
+                    });
+                    Microsoft.Maps.Events.addHandler(pin, 'mouseout', function (e) {
+                        e.target.setOptions({ color: "pink" });
+                    });
+
+                    if (i === r.length - 1){
+                        map.setView({ center: loc, zoom: 12 });
+                    } 
+                    locations.push(loc);
+            };
+        });
+});
+
+$(document).on("click", ".onePointMap", async (e) => {
+    $("#options").empty();
+    let myLocationLatitude = 0;
+    let myLocationLongitude = 0;
+    await navigator.geolocation.getCurrentPosition(function(position){
+        myLocationLatitude = position.coords.latitude 
+        myLocationLongitude = position.coords.longitude;
+    });
+    console.log(myLocationLatitude, myLocationLongitude);
+    const location_id = e.target.getAttribute("data");
+    $.ajax({
+        url: `/locations/${location_id}`,
+        method: "POST"
+    }).then (async r => {
+        var map = await new Microsoft.Maps.Map('#myMap', {
+                mapTypeId: Microsoft.Maps.MapTypeId.aerial,
+                center: new Microsoft.Maps.Location(
+                        r[0].latitude,
+                        r[0].longitude)
+            }); 
+        var center = map.getCenter();
+        var pin = new Microsoft.Maps.Pushpin(center, {
+            title: r[0].location_name,
+            color: "pink"
+        });
+        map.entities.push(pin);
+        Microsoft.Maps.Events.addHandler(pin, 'click', async function () { 
+            //Load the directions module.
+            Microsoft.Maps.loadModule('Microsoft.Maps.Directions', function () {
+            //Create an instance of the directions manager.
+            directionsManager = new Microsoft.Maps.Directions.DirectionsManager(map);
+
+            //Create waypoints to route between.
+            var current_location = new Microsoft.Maps.Directions.Waypoint({ location: new Microsoft.Maps.Location(myLocationLatitude, myLocationLongitude) });
+            directionsManager.addWaypoint(current_location);
+
+            var loc_point = new Microsoft.Maps.Directions.Waypoint({ location: new Microsoft.Maps.Location(r[0].latitude, r[0].longitude) });
+            directionsManager.addWaypoint(loc_point);
+            console.log(r[0].latitude, r[0].longitude)
+
+            //Specify the element in which the itinerary will be rendered.
+            directionsManager.setRenderOptions({ itineraryContainer: '#options' });
+
+            //Calculate directions.
+            directionsManager.calculateDirections();
+            });
+        });
+
+        Microsoft.Maps.Events.addHandler(pin, 'mouseover', function (e) {
+            e.target.setOptions({ color: "red" });
+        });
+
+        Microsoft.Maps.Events.addHandler(pin, 'mouseout', function (e) {
+            e.target.setOptions({ color: "pink" });
+        });
+    })
+});
+
+// $(document).on("click", "#removeMap", () => {
+//     console.log("I did something")
+//     $("#myMap").empty();
+// })
+ </script>
+ <script type='text/javascript' src='http://www.bing.com/api/maps/mapcontrol?callback=GetMap&key=ApAjeXjS3vzo5LBKSW2q16eGWrb8akhwXNG_QFg8I-OhbHF_X4NXk9QCQRJAPbzr' async defer></script>
+</body>
+</html>

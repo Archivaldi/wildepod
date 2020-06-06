@@ -1,0 +1,41 @@
+<% include ../../../partials/header %>
+
+<div class="container">
+    <form action="/sites/<%= result[0].site_id %>/save_updated_location/<%= result[0].location_id %>" method="POST">
+        <div class='row'>
+            <div class='col-12'>
+                <label for="location_name">Location name: </label>
+                <input id="location_name" value="<%= result[0].location_name %>" type="text" name="location_name" required>
+            </div>
+        </div>
+        <div class='row'>
+            <div class='col-12'>
+                <label for="latitude">Latitude: </label>
+                <input id="latitude" value="<%= result[0].latitude %>" type="text" name="latitude"  required>
+            </div>
+        </div>
+        <div class='row'>
+            <div class='col-12'>
+                <label for="longitude">Longitude: </label>
+                <input id="longitude" type="text" value="<%= result[0].longitude %>" name="longitude" required>
+            </div>
+        </div>
+        <div class='row'>
+            <div class='col-12'>
+                <label for="trail_type">Trail type: </label>
+                <input id="trail_type" type="text" value="<%= result[0].trail_type %>" name="trail_type" required>
+            </div>
+        </div>
+        <div class='row'>
+            <div class='col-12'>
+                <label for="notes">Notes: </label>
+                <% if (result[0].notes != null ) {%>
+                    <input id="notes" value="<%= result[0].notes %>" type="text" name="notes">
+                <% } else { %>
+                    <input id="notes" type="text" name="notes">
+                <% } %>
+            </div>
+        </div>
+        <button>Save</button>
+    </form>
+</div>

@@ -1,0 +1,100 @@
+<% include ../../partials/header %>
+<div class="container">
+    <div>
+        <div class="row">
+            <div class="col-md-3"></div>
+            <div class="col-md-2">
+                <input id="first_name" type="text" placeholder="First name">
+            </div>
+            <div class="col-md-2">
+                <input id="last_name" type="text" placeholder="Last name">
+            </div>
+            <div class="col-md-1"><button onclick="findUser()">Find</button></div>
+        </div>
+    </div>
+    <br><br>
+    <div id="user_info"></div>
+    <div class="row">
+        <div class="col-md-3" style="margin-top: 10rem;">
+            <button id="showAllUsers">Show all Users</button>
+        </div>
+    </div>
+    <div class="all_users"></div>
+    <div class="row">
+        <div class="col-md-3">
+            <div class="text-center" style="margin-top: 2rem;">
+                <button><a href="/addNewUser">Create New User</a></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).on("click", ".edit", (event) => {
+        event.preventDefault();
+        window.location.replace(`/updateUser/${event.target.getAttribute("data")}`)
+    });
+
+    $("#showAllUsers").on("click", () => {
+        $.ajax({
+            url: "/showAllUsers",
+            method: "POST"
+        }).then(r => {
+            $(".all_users").empty();
+            for (let i = 0; i < r.length; i++){
+                let row = $("<div>").attr("class", "row");
+                    $(".all_users").append(row)
+                let name_col = $("<div>").attr("class", "col-md-2");
+                let name = $("<p>").text(`${r[i].first_name} ${r[i].last_name}`);
+                name_col.append(name);
+                let email_col = $("<div>").attr("class", "col-md-4");
+                let email = $("<p>").text(r[i].email);
+                email_col.append(email);
+                let edit_col = $("<div>").attr("class", "col-md-2");
+                let edit_button = $("<button>").attr("class", "edit");
+                    edit_button.attr("data", r[i].user_id);
+                    edit_button.text("Edit");
+                edit_col.append(edit_button);
+                row.append(name_col)
+                row.append(email_col)
+                row.append(edit_col);
+            }
+        });
+    });
+
+
+    const findUser = () => {
+        $("#user_info").text("");
+        event.preventDefault();
+        let first_name = $("#first_name").val();
+        let last_name = $("#last_name").val();
+        if (first_name && last_name){
+            first_name = first_name.toLowerCase();
+            first_name = first_name.charAt(0).toUpperCase() + first_name.slice(1);
+            $.ajax({
+                url: `findUser/${first_name}/${last_name}`,
+                method: "POST"
+            }).then(r => {
+                if(r.length === 0){
+                    $("#user_info").text("The user is not found")
+                } else {
+                    let row = $("<div>").attr("class", "row");
+                    $("#user_info").append(row);
+                    let col7 =  $("<div>").attr("class", "col-md-7");
+                    row.append(col7);
+                    let p = $("<p>").text(`${r[0].first_name} ${r[0].last_name}`)
+                    col7.append(p);
+                    let button = $("<button>").text("Edit");
+                    button.attr("class", "edit");
+                    button.attr("data", r[0].user_id);
+                    let col5 = $("<div>").attr("class", "col-md-5");
+                    row.append(col5);
+                    col5.append(button);
+                }
+                
+            })
+        } else {
+            $("#user_info").text("Please write down First and last names")
+        }
+    }
+</script>

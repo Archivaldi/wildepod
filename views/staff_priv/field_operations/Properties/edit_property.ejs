@@ -1,0 +1,50 @@
+<% include ../../../partials/header %>
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <div>
+                <button><a href="/addNewProperty">Add New Property</a></button>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-3">
+            <p><b>Property</b></p>
+        </div>
+        <div class="col-md-5">
+            <p><b>County</b></p>
+        </div>
+        <div class="col-md-4">
+            <p class="text-center"><b>Action</b></p>
+        </div>
+    </div>
+        <% for (let i = 0; i < result.length; i++) {%>
+            <div class="row">
+                <div class="col-md-3">
+                    <p><%= result[i].site_full_name%></p>
+                </div>
+                <div class="col-md-5">
+                    <p><%= result[i].county%> <%= result[i].city%> <%= result[i].state%></p>
+                </div>
+                <div class="col-md-1">
+                    <form class="text-center" action="/properties/<%=result[i].site_id%>/locations" method="GET">
+                        <button> Locations </button>
+                    </form>
+                </div>
+                <div class="col-md-1">
+                    <form class="text-center" action="/updateProperty/<%=result[i].site_id%>" method="POST">
+                        <button> Edit </button>
+                    </form>
+                </div>
+                <div class="col-md-1">
+                    <form class="text-center" action="/deleteProperty/<%=result[i].site_id%>" method="POST">
+                        <button> Delete </button>
+                    </form>
+                </div>
+            </div>
+        <% } %>
+</div>
+
+</body>
+
+</html>

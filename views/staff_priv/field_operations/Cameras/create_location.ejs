@@ -1,0 +1,138 @@
+<% include ../../../partials/header %>
+<div class="container">
+    <select name="property_name" id="property_name" onchange="showLocation()">
+        <option>Select property</option>
+        <% for (let i = 0; i < properties.length; i++) { %>
+            <option value="<%= properties[i].site_full_name %>"><%= properties[i].site_full_name %></option>
+        <% } %>
+    </select>
+    <div id="create_location_form">
+    </div>
+    <div id="myMap" style='position:relative;width:100%;height:50rem; margin-bottom: 35px;'></div>
+</div>
+<script>
+    const showLocation = () => {
+        let property_name = $("#property_name").val();
+        $.ajax({
+            url: `/create_location/${property_name}`,
+            method: "POST"
+        }).then(async r => {
+            console.log(r);
+            let form_div = $("#create_location_form");
+            form_div.empty();
+            form_div.append("<br>");
+            let form = $("<form>");
+            if (r.length === 0) {
+                form.attr("action", `/properties/${r[0].site_id}/create_location/L-000"`).attr("method", "POST");
+            } else {
+                form.attr("action", `/properties/${r[0].site_id}/create_location/${r[r.length - 1].location_name}`).attr("method", "POST");
+            };
+
+            let latitude_div = $("<div>");
+            let latitude_input = $("<input>").attr("type", "text");
+                latitude_input.attr("id", "latitude");
+                latitude_input.attr("name", "latitude");
+                latitude_input.prop("required", true);
+            let latitude_label = $("<label>").attr("for", "latitude");
+                latitude_label.text("Latitude: ");
+                latitude_div.append(latitude_label, latitude_input);
+                form.append(latitude_div);
+
+            let longitude_div = $("<div>");
+            let longitude_input = $("<input>").attr("type", "text");
+                longitude_input.attr("id", "longitude");
+                longitude_input.attr("name", "longitude");
+                latitude_input.prop("required", true);
+            let longitude_label = $("<label>").attr("for", "longitude");
+                longitude_label.text("Longitude: ");
+                longitude_div.append(longitude_label, longitude_input);
+                form.append(longitude_div);
+
+            let trail_type_div = $("<div>");
+            let trail_type_input = $("<input>").attr("type", "text");
+                trail_type_input.attr("id", "trail_type");
+                trail_type_input.attr("name", "trail_type");
+            let trail_type_label = $("<label>").attr("for", "trail_type");
+                trail_type_label.text("Trail Type: ");
+                trail_type_div.append(trail_type_label, trail_type_input);
+                form.append(trail_type_div);
+            
+            let volunteer_contact_div = $("<div>");
+            let volunteer_contact_input = $("<input>").attr("type", "text");
+                volunteer_contact_input.attr("id", "volunteer_contact");
+                volunteer_contact_input.attr("name", "volunteer_contact");
+            let volunteer_contact_label = $("<label>").attr("for", "volunteer_contact");
+                volunteer_contact_label.text("Volunteer contact: ");
+                volunteer_contact_div.append(volunteer_contact_label, volunteer_contact_input);
+                form.append(volunteer_contact_div);
+            
+            let contact_befoe_check_div = $("<div>");
+            let contact_befoe_check_input = $("<select>").attr("name", "contact_before_check");
+                contact_befoe_check_input.attr("id", "contact_before_check");
+            let yes_option = $("<option>").text("Yes");
+            let no_option = $("<option>").text("No");
+            let contact_befoe_check_label = $("<label>").text("Contact before check: ");
+                contact_befoe_check_label.attr("for", "contact_before_check");
+                contact_befoe_check_input.append(yes_option, no_option);
+                contact_befoe_check_div.append(contact_befoe_check_label ,contact_befoe_check_input);
+                form.append(contact_befoe_check_div);
+
+            let send_pictures_div = $("<div>");
+            let send_pictures_input = $("<input>").attr("type", "text");
+                send_pictures_input.attr("id", "send_pictures");
+                send_pictures_input.attr("name", "send_pictures");
+                send_pictures_input.prop("required", true);
+            let send_pictures_label = $("<label>").attr("for", "send_pictures");
+                send_pictures_label.text("Send pictures: ");
+                send_pictures_div.append(send_pictures_label, send_pictures_input);
+                form.append(send_pictures_div);
+
+            let notes_div = $("<div>");
+            let notes_input = $("<input>").attr("type", "text");
+                notes_input.attr("id", "notes");
+                notes_input.attr("name", "notes");
+            let notes_label = $("<label>").attr("for", "notes");
+                notes_label.text("Notes: ");
+                notes_div.append(notes_label, notes_input);
+                form.append(notes_div);
+
+            let button = $("<button>").text("Create");
+                form.append(button);
+            
+            form_div.append(form);
+
+            var map = await new Microsoft.Maps.Map('#myMap', {
+                mapTypeId: Microsoft.Maps.MapTypeId.aerial
+            });
+            Microsoft.Maps.Events.addHandler(map, "click", function(target){
+                document.getElementById("latitude").value = target.location.latitude.toFixed(6);
+                document.getElementById("longitude").value = target.location.longitude.toFixed(6);
+            })
+            let locations = [];
+            for (let i = 0; i < r.length; i++){
+                        var loc = new Microsoft.Maps.Location(
+                            r[i].latitude,
+                            r[i].longitude);
+
+                        //Add a pushpin at the user's location.
+                        var pin = new Microsoft.Maps.Pushpin(loc, {
+                            title: r[i].location_name,
+                            color: "pink"
+                        });
+                        await map.entities.push(pin);
+                        Microsoft.Maps.Events.addHandler(pin, 'mouseover', function (e) {
+                            e.target.setOptions({ color: "red" });
+                        });
+                        Microsoft.Maps.Events.addHandler(pin, 'mouseout', function (e) {
+                            e.target.setOptions({ color: "pink" });
+                        });
+
+                        if (i === r.length - 1){
+                            map.setView({ center: loc, zoom: 12 });
+                        } 
+                        locations.push(loc);
+                };
+        })
+    }
+</script>
+<script type='text/javascript' src='http://www.bing.com/api/maps/mapcontrol?callback=GetMap&key=ApAjeXjS3vzo5LBKSW2q16eGWrb8akhwXNG_QFg8I-OhbHF_X4NXk9QCQRJAPbzr' async defer></script>

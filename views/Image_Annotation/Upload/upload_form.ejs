@@ -1,0 +1,10 @@
+<% include ../partials/header %>
+<div class="container">
+    <form action="/<%= site_id %>/<%= site_name %>/<%= location_id %>/upload_folder" enctype="multipart/form-data" method="POST">
+        <label for="folder">Upload a single file with photo or video: </label>
+        <div>
+            <input type="file" name="file" id="file" name="files" accept="image/video" multiple>
+        </div>
+        <button>Submit</button>
+    </form>
+</div>   

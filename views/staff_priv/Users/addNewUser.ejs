@@ -1,0 +1,78 @@
+        <% include ../../partials/header %>
+    <div class="jumbotron container">
+        <div>
+            <h2>Login</h2>
+            <form id="main" action="/createNewUser" method="POST">
+                <div class='row'>
+                    <div class='col-12'>
+                        <label for="user_name">Username: </label>
+                        <input id="user_name" type="text" name="user_name" required>
+                    </div>
+                </div>
+                <div class='row'>
+                    <div class='col-12'>
+                        <label for="first_name">First name: </label>
+                        <input id="first_name" type="text" name="first_name" required>
+                    </div>
+                </div>
+                <div class='row'>
+                    <div class='col-12'>
+                        <label for="last_name">Last name: </label>
+                        <input id="last_name" type="text" name="last_name" required>
+                    </div>
+                </div>
+                <div class='row'>
+                    <div class='col-12'>
+                        <label for="email">Email: </label>
+                        <input id="email" type="text" name="email" required>
+                    </div>
+                </div>
+                <div class='row'>
+                    <div class='col-12'>
+                        <label for="password">Password</label>
+                        <input id="password" type="password" name="password" required>
+                    </div>
+                </div>
+                <div class='row'>
+                    <div class='col-12'>
+                        <p>Role: </p>
+                        <label for="entry_volunteer">Entry </label>
+                        <input id="entry_volunteer" type="radio" name="user_level" value="entry_volunteer">
+                        <label for="super_volunteer ">Super volunteer  </label>
+                        <input id="super_volunteer " type="radio" name="user_level" value="super_volunteer ">
+                        <label for="staff ">Staff  </label>
+                        <input id="staff " type="radio" name="user_level" value="staff ">
+                        <label for="admin">Admin </label>
+                        <input id="admin" type="radio" name="user_level" value="Admin">
+                    </div>
+                </div>
+                <div class='row'>
+                    <div class='col-12'>
+                        <label for="phone">Phone: </label>
+                        <input id="phone" type="text" name="phone" required>
+                    </div>
+                </div>
+                <div class='row'>
+                    <div class='col-12'>
+                        <label for="state">State: </label>
+                        <input id="state" type="text" name="state" required>
+                    </div>
+                </div>
+                <div class='row'>
+                    <div class='col-12'>
+                        <label for="city">City: </label>
+                        <input id="city" type="text" name="city" required>
+                    </div>
+                </div>
+
+                <div class='row'>
+                    <div class='col-12'>
+                        <button class="btn btn-primary" type="submit">Create</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    <% include ../../partials/footer %>
+</body>
+</html>

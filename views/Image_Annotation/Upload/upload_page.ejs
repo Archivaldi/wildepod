@@ -1,0 +1,48 @@
+<% include ../../partials/header %>
+<div class="container">
+    <select name="property_name" id="properties" onchange="findLocations()">
+        <option>Select a property</option>
+        <% for (let i = 0; i < properties.length; i++) {%>
+            <option value="<%= properties[i].site_full_name%>"><%= properties[i].site_full_name%></option>
+        <% } %>
+    </select>
+    <br>
+    <div id="locations_div"></div>
+    <div id="form_div"></div>
+</div>
+<script>
+    const findLocations = () => {
+        let property = $("#properties").val();
+
+        $.ajax({
+            url: `/properties/${property}/locations`,
+            method: "POST"
+        }).then( r => {   
+            let locations_div = $("#locations_div");
+            $("#form_div").empty();
+            locations_div.empty();
+            select_div = $("<div>");
+            select = $("<select>").attr("id", "locations").attr("onchange", "showForm()");
+            let select_option = $("<option>").text("Select location");
+                select.append(select_option);
+            r.forEach(location => {
+                let option = $("<option>").attr("value", location.location_name).text(location.location_name);
+                    select.append(option);
+            });
+            select_div.append(select);
+            locations_div.append(select_div);
+        });
+    };
+
+    const showForm = async () => {
+        let property = $("#properties").val();
+        let location = $("#locations").val();
+        let info = await $.ajax({url: `/properties/${property}/locations/${location}/info`});
+        let form = $("<form>").attr("action", `/upload/${info.site_id}/${info.site_full_name}/${info.location_id}/${info.location_name}/${info.camera_id}/${info.camera_name}/${info.memorystick_id}`).attr("method", "POST").attr("enctype", "multipart/form-data");
+        let input = $("<input>").attr("type", "file").attr("name", "files").prop("webkitdirectory", true);
+        let button = $("<button>").text("Upload");
+            form.append(input, button);
+            $("#form_div").append(form);
+
+    }
+</script>

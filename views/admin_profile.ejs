@@ -1,0 +1,31 @@
+    <% include ./partials/header %>
+    <div class="container">
+        <h1>Hi <%= user.user_name%></h1>
+        <h1>This is the admin profile</h1>
+        <div>
+            <a href="/addNewUser">Create new user</a>
+        </div>
+        <div>
+            <a href="/editUser">Edit User</a>
+        </div>
+        <div>
+            <a href="/addNewSite">Add New Site</a>
+        </div>
+        <!-- <div>
+            <a href="/editSite">Edit Site </a>
+        </div> -->
+        <div>
+            <a href="/sites">Sites</a>
+        </div>
+        <div>
+            <a href="addNewCamera">Add new Camera</a>
+        </div><div>
+            <a href="edit_camera">Edit Camera</a>
+        </div>
+    </div>
+
+    <% include ./partials/footer %>
+
+</body>
+
+</html>

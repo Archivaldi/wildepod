@@ -1,0 +1,97 @@
+<% include ../../../partials/header %>
+
+<div class="container" onload=>
+    <form action="/properties/<%=site_id%>/create_location/<%= loc_id%>" method="POST">
+        <div class='row'>
+            <div class='col-12'>
+                <label for="latitude">Latitude: </label>
+                <input id="latitude" type="text" name="latitude" required>
+            </div>
+        </div>
+        <div class='row'>
+            <div class='col-12'>
+                <label for="longitude">Longitude: </label>
+                <input id="longitude" type="text" name="longitude" required>
+            </div>
+        </div>
+        <div class='row'>
+            <div class='col-12'>
+                <label for="trail_type">Trail type: </label>
+                <input id="trail_type" type="text" name="trail_type">
+            </div>
+        </div>
+        <div class='row'>
+            <div class='col-12'>
+                <label for="volunteer_contact">Volunteer contact: </label>
+                <input id="volunteer_contact" type="text" name="volunteer_contact">
+            </div>
+        </div>
+        <div class='row'>
+            <div class='col-12'>
+                <label for="contact_before_check">Contact before check: </label>
+                <select id="contact_before_check">
+                    <option value="yes">Yes</option>
+                    <option value="no">No</option>
+                </select>
+            </div>
+        </div>
+        <div class='row'>
+            <div class='col-12'>
+                <label for="send_pictures">Send pictures: </label>
+                <input id="send_pictures" type="text" name="send_pictures" />
+            </div>
+        </div>
+        <div class='row'>
+            <div class='col-12'>
+                <label for="notes">Notes: </label>
+                <input id="notes" type="text" name="notes">
+            </div>
+        </div>
+        <button>Create</button>
+    </form>
+    <button onclick="getMap()">Use a map to find coordinates</button>
+    <div id="myMap" style='position:relative;width:100%;height:50rem; margin-bottom: 35px;'></div>
+</div>
+
+<script>
+
+const getMap = () => {
+    $.ajax({
+        url: "map_points",
+        method: "POST"
+    }).then(async r => {
+        var map = await new Microsoft.Maps.Map('#myMap', {
+            mapTypeId: Microsoft.Maps.MapTypeId.aerial
+        });
+        Microsoft.Maps.Events.addHandler(map, "click", function(target){
+            document.getElementById("latitude").value = target.location.latitude.toFixed(6);
+            document.getElementById("longitude").value = target.location.longitude.toFixed(6);
+        })
+        let locations = [];
+        for (let i = 0; i < r.length; i++){
+            var loc = new Microsoft.Maps.Location(
+                r[i].latitude,
+                r[i].longitude);
+
+            //Add a pushpin at the user's location.
+            var pin = new Microsoft.Maps.Pushpin(loc, {
+                title: r[i].location_name,
+                color: "pink"
+            });
+            await map.entities.push(pin);
+            Microsoft.Maps.Events.addHandler(pin, 'mouseover', function (e) {
+                e.target.setOptions({ color: "red" });
+            });
+            Microsoft.Maps.Events.addHandler(pin, 'mouseout', function (e) {
+                e.target.setOptions({ color: "pink" });
+            });
+
+            if (i === r.length - 1){
+                map.setView({ center: loc, zoom: 12 });
+            } 
+            locations.push(loc);
+        };
+    })
+};
+</script>
+<script type='text/javascript' src='http://www.bing.com/api/maps/mapcontrol?callback=GetMap&key=ApAjeXjS3vzo5LBKSW2q16eGWrb8akhwXNG_QFg8I-OhbHF_X4NXk9QCQRJAPbzr' async defer></script>

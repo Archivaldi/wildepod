@@ -1,0 +1,245 @@
+<% include ../../../partials/header %>
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <button>
+                <a href="addNewCamera">Add New Camera</a>
+            </button>
+        </div>
+    </div>
+    <br>
+    <div class="row">
+        <div class="col-md-4">
+            <select id="properties" onchange="findLocations()">
+                <option>Select a Property</option>
+                <% for (let i = 0; i < properties.length; i++) { %>
+                    <option value="<%= properties[i].site_full_name%>"><%= properties[i].site_full_name%></option>
+                <% } %>
+            </select>
+        </div>
+    </div>
+    <br>
+    <div id="locations_div"></div>
+    <div><button><a href="/create_location">Create New Location</a></button></div>
+    <div><button><a href="/addNewCamera">Create New Camera</a></button></div>
+    <div id="myMap" style='position:relative;width:100%;height:50rem; margin-bottom: 35px;'></div>
+</div>
+
+</div>
+<script>
+    const findLocations = () => {
+        let property = $("#properties").val();
+
+        $.ajax({
+            url: `/find_locations/${property}`
+        }).then( async r => {   
+            let locations_div = $("#locations_div");
+            locations_div.empty();
+            $("#myMap").empty();
+
+            if (r.length === 0){
+                locations_div.text("There are no locations for this property");
+            } else {
+                //first append colums with names
+            let row = $("<div>").attr("class", "row");
+            let location_name = $("<div>").attr("class", "col-md-1");
+                location_name.html("<b>Location name</b>")
+                row.append(location_name);
+            let camera_name = $("<div>").attr("class", "col-md-1");
+                camera_name.html("<b>Camera name</b>");
+                row.append(camera_name);
+            let volunteer_name = $("<div>").attr("class", "col-md-2");
+                volunteer_name.html("<b>Volunteer name</b>");
+                row.append(volunteer_name);
+                locations_div.append(row);
+            let date = $("<div>").attr("class", "col-md-2");
+                date.html("<b>Date</b>");
+                row.append(date);
+            let status = $("<div>").attr("class", "col-md-1");
+                status.html("<b>Status</b>");
+                row.append(status);
+            let activity = $("<div>").attr("class", "col-md-2");
+                activity.html("<b>Activity</b>");
+                row.append(activity);
+            let battery_level = $("<div>").attr("class", "col-md-1");
+                battery_level.html("<b>Battery Level</b>");
+                row.append(battery_level);
+            let notes = $("<div>").attr("class", "col-md-2");
+                notes.html("<b>Notes</b>");
+                row.append(notes);
+
+                // append all locations 
+            for (let i = 0; i < r.length; i++){
+                if (r[i].camera_id){
+                    let form = $("<form>").attr("method", "POST");
+                        form.attr("action", `/update_camera_history/${r[i].location_id}/${r[i].camera_id}/${r[i].camera_name}`);
+                    let loc_row = $("<div>").attr("class", "row");
+                    let loc_name = $("<div>").attr("class", "col-md-1");
+                        loc_name.text(r[i].location_name);
+                        loc_row.append(loc_name);
+                    let camera = $("<div>").attr("class", "col-md-1");
+                        if (r[i].camera_name !== ""){
+                            camera.text(r[i].camera_name);
+                        } else {
+                            let button = $("<button>").html("Connect Camera");
+                                button.attr("type", "button");
+                                button.attr("onclick", "connectCamera()");
+                                camera_name.append(button);
+                        }
+                        loc_row.append(camera);
+                    let volunteer = $("<div>").attr("class", "col-md-2");
+                    let volunteer_input = $("<input>").val(r[i].volunteer_name).attr("name", "volunteer_name");
+                        volunteer.append(volunteer_input);
+                        loc_row.append(volunteer);
+                    let date = $("<div>").attr("class", "col-md-2");
+                    let date_input = $("<input>").attr("type", "date").attr("name", "camera_update_date");
+                        if (r[i].camera_update_date !== "0000-00-00"){
+                            let date = r[i].camera_update_date;
+                            date = date.slice(0,10);
+                            date_input.val(date);
+                        }
+                        date.append(date_input);
+                        loc_row.append(date);
+                    let status = $("<div>").attr("class", "col-md-1");
+                    let status_input = $("<select>").attr("name", "status");
+                    let option_active = $("<option>").val("Active").text("Active");
+                    let option_inactive = $("<option>").val("Inactive").text("Inactive");
+                        if (r[i].status.toLowerCase() === "" || r[i].status.toLowerCase() === "active"){
+                            status_input.append(option_active, option_inactive);
+                            status.append(status_input);
+                        } else if (r[i].status.toLowerCase() === "inactive"){
+                            status_input.append(option_inactive, option_active);
+                            status.append(status_input);
+                        }
+                        loc_row.append(status)
+
+                        let activity_col = $("<div>").attr("class", "col-md-2");
+                            activity_col.css({"width": "100%"});
+                        let activity_input = $("<select>").attr("name", "activity");
+                        let activity_option_placed = $("<option>").val("Placed").text("Placed");
+                        let activity_option_checked = $("<option>").val("Checked").text("Checked");
+                        let activity_option_removed = $("<option>").val("Removed").text("Removed");
+                        let activity_option_stick_changed = $("<option>").val("Stick Changed").text("Stick Changed");
+                        let activity_option_st_and_bt_changed = $("<option>").val("Stick and battery changed").text("Stick/battery changed");
+                        let activity_to_show = r[i].activity;
+                            if (activity_to_show.toLowerCase() === "placed" || activity_to_show.toLowerCase() === ""){
+                                activity_input.append(activity_option_placed, activity_option_checked, activity_option_removed, activity_option_stick_changed, activity_option_st_and_bt_changed);
+                            } else if (activity_to_show.toLowerCase() === "checked"){
+                                activity_input.append(activity_option_checked, activity_option_placed, activity_option_removed, activity_option_stick_changed, activity_option_st_and_bt_changed);
+                            } else if (activity_to_show.toLowerCase() === "removed") {
+                                activity_input.append(activity_option_removed, activity_option_checked, activity_option_placed, activity_option_stick_changed, activity_option_st_and_bt_changed);
+                            } else if (activity_to_show.toLowerCase() === "stick changed"){
+                                activity_input.append(activity_option_stick_changed, activity_option_removed, activity_option_checked, activity_option_placed, activity_option_st_and_bt_changed);
+                            } else if (activity_to_show.toLowerCase() === "stick and battery changed"){
+                                activity_input.append(activity_option_st_and_bt_changed, activity_option_stick_changed, activity_option_removed, activity_option_checked, activity_option_placed);
+                            }
+                        activity_col.append(activity_input);
+                        loc_row.append(activity_col);
+
+                        let battery = $("<div>").attr("class", "col-md-1");
+                        let batter_input = $("<select>").attr("name", "battery_level");
+                        let battery_option_full = $("<option>").val("Full").text("Full");
+                        let battery_option_2_3 = $("<option>").val("2/3 Full").text("2/3 Full");
+                        let battery_option_1_3 = $("<option>").val("1/3 Full").text("1/3 Full");
+                            if (r[i].battery_level.toLowerCase() === "full" || r[i].battery_level.toLowerCase() === ""){
+                                batter_input.append(battery_option_full, battery_option_2_3, battery_option_1_3);
+                            } else if (r[i].battery_level.toLowerCase() === "2/3 full") {
+                                batter_input.append(battery_option_2_3, battery_option_1_3, battery_option_full);
+                            } else if (r[i].battery_level.toLowerCase() === "1/3 full"){
+                                batter_input.append(battery_option_1_3, battery_option_2_3, battery_option_full);
+                            }
+                        battery.append(batter_input);
+                        loc_row.append(battery);
+
+                        let notes_col = $("<div>").attr("class", "col-md-1");
+                        let notes_input = $("<input>").attr("type", "text").attr("name", "notes");
+                        if (r[i].notes !== ""){
+                            notes_input.val(r[i].notes);
+                        };
+                        notes_col.append(notes_input);
+                        loc_row.append(notes_col);
+
+                        let update_col = $("<div>").attr("class", "col-md-2");
+                        let update = $("<button>").html("Update");
+                            update_col.append(update)
+                            loc_row.append(update_col);
+
+                        let view_history_col = $("<div>").attr("class", "col-md-2");
+                        let view_history = $("<button>").attr("type", "button");
+                        let view_history_a = $("<a>").attr("href", `/view_history/${r[i].camera_id}`).text("View History");
+                            view_history.append(view_history_a);
+                            view_history_col.append(view_history);
+                            loc_row.append(view_history_col);
+
+                        let disconnect_div = $("<div>").attr("class", "col-md-2");
+                        let disconnect_button = $("<button>").attr("type", "button").attr("class", "disconnect_camera").attr("data", `${r[i].camera_id}`).attr("meta_data", `${r[i].camera_name}`).text("Disconnect camera");
+                            disconnect_div.append(disconnect_button);
+                            loc_row.append(disconnect_div);
+
+                        let br = $("<br>");
+                        form.append(loc_row); 
+                        locations_div.append(form);
+                        locations_div.append(br);
+                        
+                } else {
+                    let form = $("<form>").attr("method", "GET");
+                        form.attr("action", `/update_camera_history/${r[i].location_id}/connect_camera`);
+                    let loc_row = $("<div>").attr("class", "row");
+                    let loc_name = $("<div>").attr("class", "col-md-1");
+                        loc_name.text(r[i].location_name);
+                        loc_row.append(loc_name);
+                    let button_div = $("<div>").attr("class", "col-md-1");
+                    let button = $("<button>").text("Connect");
+                        button_div.append(button);
+                        loc_row.append(button_div)
+                    
+                        form.append(loc_row)
+                        locations_div.append(form)
+                        let br = $("<br>");
+                        locations_div.append(br)
+                }
+            }
+            };
+            var map = await new Microsoft.Maps.Map('#myMap', {
+                mapTypeId: Microsoft.Maps.MapTypeId.aerial
+            });
+            let locations = [];
+            for (let i = 0; i < r.length; i++){
+                        var loc = new Microsoft.Maps.Location(
+                            r[i].latitude,
+                            r[i].longitude);
+
+                        //Add a pushpin at the user's location.
+                        var pin = new Microsoft.Maps.Pushpin(loc, {
+                            title: r[i].location_name,
+                            color: "pink"
+                        });
+                        await map.entities.push(pin);
+                        Microsoft.Maps.Events.addHandler(pin, 'mouseover', function (e) {
+                            e.target.setOptions({ color: "red" });
+                        });
+                        Microsoft.Maps.Events.addHandler(pin, 'mouseout', function (e) {
+                            e.target.setOptions({ color: "pink" });
+                        });
+
+                        if (i === r.length - 1){
+                            map.setView({ center: loc, zoom: 12 });
+                        } 
+                        locations.push(loc);
+                };
+        });
+    };
+
+    $(document).on("click", ".disconnect_camera", (e) => {
+        let data = e.target.getAttribute("data");
+        let meta_data = e.target.getAttribute("meta_data")
+        $.ajax({
+            url: `/disconnect_camera/${data}/${meta_data}`,
+            method: "POST"
+        }).then(r => {
+            console.log(r);
+            location.reload();
+        });
+    });
+</script>
+<script type='text/javascript' src='http://www.bing.com/api/maps/mapcontrol?callback=GetMap&key=ApAjeXjS3vzo5LBKSW2q16eGWrb8akhwXNG_QFg8I-OhbHF_X4NXk9QCQRJAPbzr' async defer></script>

@@ -1,0 +1,44 @@
+<% include ../../partials/header %>
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-2">
+            <p><b>Username</b></p>
+        </div>
+        <div class="col-md-2">
+            <p><b>Full name</b></p>
+        </div>
+        <div class="col-md-2">
+            <p><b>User level</b></p>
+        </div>
+        <div class="col-md-6">
+            <p class="text-center"><b>Action</b></p>
+        </div>
+    </div>
+        <% for (let i = 0; i < results.length; i++) {%>
+            <div class="row">
+                <div class="col-md-2">
+                    <p><%= results[i].user_name %> </p>
+                </div>
+                <div class="col-md-2">
+                    <p><%= results[i].first_name %> <%= results[i].last_name %></p>
+                </div>
+                <div class="col-md-2">
+                    <p><%= results[i].user_level %> </p>
+                </div>
+                <div class="col-md-3">
+                    <form  class="text-center" action="/updateUser/<%=results[i].user_id%>" method="POST">
+                        <button class="edit" id="<%= results[i].user_id %>"> Edit </button>
+                    </form>
+                </div>
+                <div class="col-md-3" >
+                    <form  class="text-center" action="/deleteUser/<%=results[i].user_id%>" method="POST">
+                        <button class="delete" id="<%= results[i].user_id %>"> Delete </button>
+                    </form>
+                </div>
+            </div>
+        <% } %>
+</div>
+</body>
+
+</html>

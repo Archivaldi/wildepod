@@ -1,0 +1,68 @@
+<% include ../../../partials/header %>
+
+<div class="container">
+    <form action="/edit_property/save/<%=result[0].site_id%>" method="POST">
+        <div class='row'>
+            <div class='col-12'>
+                <label for="site_full_name">Site name: </label>
+                <input value="<%= result[0].site_full_name %>" id="site_full_name" type="text" name="site_full_name" required>
+            </div>
+        </div>
+        <div class='row'>
+            <div class='col-12'>
+                <label for="owner">Owner: </label>
+                <input value="<%= result[0].owner %>" id="owner" type="text" name="owner" required>
+            </div>
+        </div>
+        <div class='row'>
+            <div class='col-12'>
+                <label for="street">Street: </label>
+                <input value="<%= result[0].street %>" id="street" type="text" name="street" required>
+            </div>
+        </div>
+        <div class='row'>
+            <div class='col-12'>
+                <label for="city">City: </label>
+                <input value="<%= result[0].city %>" id="city" type="text" name="city" required>
+            </div>
+        </div>
+        <div class='row'>
+            <div class='col-12'>
+                <label for="county">County: </label>
+                <input value="<%= result[0].county %>" id="county" type="text" name="county" required>
+            </div>
+        </div>
+        <div class='row'>
+            <div class='col-12'>
+                <label for="state">State: </label>
+                <input value="<%= result[0].state %>" id="state" type="text" name="state" required>
+            </div>
+        </div>
+    
+        <% if (result[0].notes === null) {%>
+            <div class='row'>
+                <div class='col-12'>
+                    <label for="notes">Notes: </label>
+                    <input id="notes" type="text" name="notes">
+                </div>
+            </div>
+        <% } else { %>
+            <div class='row'>
+                <div class='col-12'>
+                    <label for="notes">Notes: </label>
+                    <input value="<%= result[0].notes %>" id="notes" type="text" name="notes">
+                </div>
+            </div>
+        <% } %>
+    
+        <div class='row'>
+            <div class='col-12'>
+                <button class="btn btn-primary" type="submit">Edit</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+</body>
+
+</html>

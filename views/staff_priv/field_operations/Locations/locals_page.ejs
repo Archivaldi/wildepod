@@ -1,0 +1,25 @@
+<% include ../../../partials/header %>
+<div class="container">
+    <div class="text-center">
+            <input id="location_name" type="text" list="properties" onchange="findLocations()" style="width: 40%;">
+        <datalist id="properties">
+            <% for (let i = 0; i < properties.length; i++) { %>
+                <option value="<%= properties[i].site_full_name %>">
+            <% } %>
+        </datalist>
+    </div>
+</div>
+<script>
+const findLocations = async (event) => {
+    const site_name = $("#location_name").val();
+    let locations = await $.ajax({url: `/properties/${site_name}/locations`, method: "POST"});
+    locations.forEach(location => {
+        let row = $("<div>").attr("class", "row");
+        let col_loc_name = $("<div").attr("class", "col-md-2");
+        let p = $("<p>").text(location.location_name);
+            col_loc_name.append(p);
+        let col_lol
+        
+    });
+};
+</script>

@@ -1,0 +1,94 @@
+<% include ../../partials/header %>
+<div class="container">
+    <form action="/edit_user/save/<%=result[0].user_id%>" method="POST">
+        <div class='row'>
+            <div class='col-12'>
+                <label for="first_name">First name: </label>
+                <input value="<%= result[0].first_name %>" id="first_name" type="text" name="first_name" required>
+            </div>
+        </div>
+        <div class='row'>
+            <div class='col-12'>
+                <label for="last_name">Last name: </label>
+                <input value="<%= result[0].last_name %>" id="last_name" type="text" name="last_name" required>
+            </div>
+        </div>
+        <div class='row'>
+            <div class='col-12'>
+                <label for="email">Email: </label>
+                <input value="<%= result[0].email %>" id="email" type="text" name="email" required>
+            </div>
+        </div>
+        <div class='row'>
+            <div class='col-12'>
+                <label for="password">Password</label>
+                <input value="<%= result[0].password %>" id="password" type="password" name="password" required>
+            </div>
+        </div>
+        <div class='row'>
+            <div class='col-12'>
+                <p>Role: </p>
+    
+                <label for="entry_volunteer">Entry volunteer </label>
+                <% if (result[0].user_level === "entry_volunteer"){ %>
+                    <input checked id="entry_volunteer" type="radio" name="user_level" value="entry_volunteer" required>
+                <% } else { %>
+                    <input id="entry_volunteer" type="radio" name="user_level" value="entry_volunteer" required>
+                <% } %>
+    
+                <label for="super_volunteer">Super volunteer </label>
+                <% if (result[0].user_level === "super_volunteer"){ %>
+                    <input checked id="super_volunteer" type="radio" name="user_level" value="super_volunteer">
+                <% } else { %>
+                    <input id="super_volunteer" type="radio" name="user_level" value="super_volunteer">
+                <% } %>
+
+                <label for="staff">Staff </label>
+                <% if (result[0].user_level === "staff"){ %>
+                    <input checked id="staff" type="radio" name="user_level" value="staff">
+                <% } else { %>
+                    <input id="staff" type="radio" name="user_level" value="staff">
+                <% } %>
+    
+                <label for="admin">Admin </label>
+                <% if (result[0].user_level === "admin"){ %>
+                    <input checked id="admin" type="radio" name="user_level" value="admin">
+                <% } else { %>
+                    <input id="admin" type="radio" name="user_level" value="admin">
+                <% } %>
+            </div>
+        </div>
+        <div class='row'>
+            <div class='col-12'>
+                <label for="phone">Phone: </label>
+                <input value="<%= result[0].phone %>" id="phone" type="text" name="phone" required>
+            </div>
+        </div>
+        <div class='row'>
+            <div class='col-12'>
+                <label for="state">State: </label>
+                <input value="<%= result[0].state %>" id="state" type="text" name="state" required>
+            </div>
+        </div>
+        <div class='row'>
+            <div class='col-12'>
+                <label for="city">City: </label>
+                <input value="<%= result[0].city %>" id="city" type="text" name="city" required>
+            </div>
+        </div>
+    
+        <div class='row'>
+            <div class='col-md-3'>
+                <button class="btn btn-primary" type="submit">Edit</button>
+            </div>
+        </div>
+    </form>
+    <form action="/deleteUser/<%= result[0].user_id%>" method="POST">
+        <div class="col-md-3"><button class="btn btn-primary">Delete</button></div>
+    </form>
+</div>
+
+<% include ../../partials/footer %>
+</body>
+
+</html>

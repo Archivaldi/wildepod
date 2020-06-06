@@ -1,0 +1,56 @@
+<% include ../../../partials/header %>
+<div class="jumbotron">
+    <div class="container">
+        <h2>Add new property:</h2>
+        <form id="main" action="/createNewProperty" method="POST">
+            <div class='row'>
+                <div class='col-12'>
+                    <label for="site_full_name">Property name: </label>
+                    <input id="site_full_name" type="text" name="site_full_name" required>
+                </div>
+            </div>
+            <div class='row'>
+                <div class='col-12'>
+                    <label for="owner">Owner: </label>
+                    <input id="owner" type="text" name="owner" required>
+                </div>
+            </div>
+            <div class='row'>
+                <div class='col-12'>
+                    <label for="street">Street: </label>
+                    <input id="street" type="text" name="street" required>
+                </div>
+            </div>
+            <div class='row'>
+                <div class='col-12'>
+                    <label for="city">City: </label>
+                    <input id="city" type="text" name="city" required>
+                </div>
+            </div>
+            <div class='row'>
+                <div class='col-12'>
+                    <label for="county">County: </label>
+                    <input id="county" type="text" name="county" required>
+                </div>
+            </div>
+            <div class='row'>
+                <div class='col-12'>
+                    <label for="state">State: </label>
+                    <input id="state" type="text" name="state" required>
+                </div>
+            </div>
+            <div class='row'>
+                <div class='col-12'>
+                    <label for="notes">Notes: </label>
+                    <input id="notes" type="text" name="notes">
+                </div>
+            </div>
+
+            <div class='row'>
+                <div class='col-12'>
+                    <button class="btn btn-primary" type="submit">Create</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

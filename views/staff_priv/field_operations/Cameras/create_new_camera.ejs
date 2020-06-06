@@ -1,0 +1,98 @@
+<% include ../../../partials/header %>
+    <div class="container">
+        <form action="/createNewCamera" method="POST">
+            <div class='row'>
+                <div class='col-12'>
+                    <label for="brand">Brand: </label>
+                    <input type="text" list="brands" name="brand" required>
+                    <datalist id="brands">
+                        <% for(let i = 0; i < result.length; i++) { %>
+                            <option value="<%= result[i].brand %>">
+                        <% } %>
+                    </datalist>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12">
+                    <label for="camera_model">Camera model: </label>
+                    <input type="text" id="camera_model" name="camera_model">
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12">
+                    <label for="model">Model: </label>
+                    <input type="text" id="model" name="model">
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12">
+                    <label for="serial_number">Serial number: </label>
+                    <input type="text" id="serial_number" name="serial_number">
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12">
+                    <label for="inventory_date">Inventory date: </label>
+                    <input type="date" id="inventory_date" name="inventory_date">
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12">
+                    <label for="box">Box: </label>
+                    <select name="box" id="box">
+                        <option value="yes">Yes</option>
+                        <option value="no">No</option>
+                    </select>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12">
+                    <label for="battery_type">Battery type: </label>
+                    <input type="text" id="battery_type" name="battery_type">
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12">
+                    <label for="number_of_batteries">Number of batteries: </label>
+                    <input type="text" id="number_of_batteries" name="number_of_batteries">
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12">
+                    <label for="trans_type">Transmission type: </label>
+                    <input type="text" id="trans_type" name="trans_type">
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12">
+                    <label for="lock_number">Lock number: </label>
+                    <input type="text" id="lock_number" name="lock_number">
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12">
+                    <label for="lock_type">Lock type: </label>
+                    <input type="text" id="lock_type" name="lock_type">
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12">
+                    <label for="duplicate_key">Duplicate key: </label>
+                    <input type="text" id="duplicate_key" name="duplicate_key">
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12">
+                    <label for="notes">Notes: </label>
+                    <input type="text" id="notes" name="notes">
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12">
+                    <button>Create</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

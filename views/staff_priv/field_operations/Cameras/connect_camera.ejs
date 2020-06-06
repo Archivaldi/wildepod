@@ -1,0 +1,61 @@
+<% include ../../../partials/header %>
+<div class="container">
+    <div class="row">
+        <div class="col-md-1"><b>Location name</b></div>
+        <div class="col-md-1"><b>Camera name</b></div>
+        <div class="col-md-2"><b>Volunteer name</b></div>
+        <div class="col-md-2"><b>Date</b></div>
+        <div class="col-md-1"><b>Status</b></div>
+        <div class="col-md-2"><b>Activity</b></div>
+        <div class="col-md-1"><b>Battery Level</b></div>
+        <div class="col-md-2"><b>Notes</b></div>
+    </div>
+    <form action="/update_camera_history/<%= location.location_id%>/connect_camera" method="POST">
+        <div class="row">
+            <div class="col-md-1">
+                <p><%= location.location_name%></p>
+            </div>
+            <div class="col-md-1">
+                <select name="camera_name" id="camera_name" required>
+                    <% for (let i = 0; i < cameras.length; i++) { %>
+                        <option value="<%= cameras[i].camera_name%> <%= cameras[i].camera_id %>"><%= cameras[i].camera_name%></option>
+                    <% } %>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <input type="text" name="volunteer_name" required>
+            </div>
+            <div class="col-md-2">
+                <input type="date" name="camera_update_date" required>
+            </div>
+            <div class="col-md-1">
+                <select name="status" id="status" required>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select name="activity" id="activity">
+                    <option value="Placed">Placed</option>
+                    <option value="Checked">Checked</option>
+                    <option value="Removed">Removed</option>
+                    <option value="St changed">Stick changed</option>
+                    <option value="S/b changed">Stick/Battery changed</option>
+                </select>
+            </div>
+            <div class="col-md-1">
+                <select name="battery_level" id="battery_level">
+                    <option value="full">Full</option>
+                    <option value="2/3 full">2/3 Full</option>
+                    <option value="1/3full">1/3 Full</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <input type="text" name="notes">
+            </div>
+        </div>
+        <div class="col-md-12">
+            <button>Connect</button>
+        </div>
+    </form>
+</div>

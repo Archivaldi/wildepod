@@ -4,9 +4,9 @@
     background-image: 
         linear-gradient( 
             to right bottom, 
-            rgba($color-primary-dark, 0.3),
-            rgba($color-primary-dark, 0.3)),
-        url(./img/bobcat.jpg);
+            rgba($color-primary-light, 0.8),
+            rgba($color-primary-dark, 0.8)),
+        url(./img/welcome_picture.jpg);
     background-size: cover;
     background-position: top;
 
@@ -24,7 +24,6 @@
         color: $color-white;
         text-transform: uppercase;
         margin-bottom: 6rem;
-    
         backface-visibility: hidden;
 
 

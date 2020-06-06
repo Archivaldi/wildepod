@@ -1024,7 +1024,7 @@ if (process.env.NODE_ENV === "production"){
 //all other pages
 app.get("*", (req,res) => {
     res.redirect("/profile")
-})
+});
 
 // listeting port
 app.listen(process.env.PORT || 3000, function () {

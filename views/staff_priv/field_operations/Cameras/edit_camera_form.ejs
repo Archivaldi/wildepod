@@ -1,4 +1,6 @@
 <% include ../../../partials/header %>
+<% include ../../../partials/navbar %>
+
 <div class="container">
     <form action="/edit_camera/<%=result[0].user_id%>/<%= result[0].location_id %>/<%= result[0].camera_name%>" method="POST">
         <h1><%= result[0].camera_name %></h1>

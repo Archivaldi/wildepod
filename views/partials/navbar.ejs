@@ -1,0 +1,25 @@
+<nav class="nav-wrapper">
+    <ul class="nav-wrapper__list">
+      <li>
+        <a href="/">Home</a>
+      </li>
+      <li>
+        <a href="#section-about">About</a>
+      </li>
+      <li>
+        <a href="#">Contact Us</a>
+      </li>
+        <%if (user === "") {%>
+            <li>
+                <a href="/login">Login</a>
+            </li>
+        <% } else { %>
+            <li>
+                <a href="/profile">Profile</a>
+            </li>
+            <li>
+                <a href="/signOut">Logout</a>
+            </li>
+        <% } %>
+    </ul>
+</nav>

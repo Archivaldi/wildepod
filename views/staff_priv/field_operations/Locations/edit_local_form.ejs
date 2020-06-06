@@ -1,4 +1,6 @@
 <% include ../../../partials/header %>
+<% include ../../../partials/navbar %>
+
 
 <div class="container">
     <form action="/sites/<%= result[0].site_id %>/save_updated_location/<%= result[0].location_id %>" method="POST">

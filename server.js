@@ -56,11 +56,7 @@ connection.connect(function (err) {
 
 //main route
 app.get("/", function (req, res) {
-    if (req.session.user_id) {
-        res.redirect("/profile");
-    } else {
         res.render("index");
-    };
 });
 
 //login route

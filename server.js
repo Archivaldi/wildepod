@@ -1,6 +1,8 @@
 const express = require("express");
 const app = express();
 
+const PORT = process.env.PORT || 3000;
+
 //fs package
 const fs = require('fs-extra');
 
@@ -600,7 +602,7 @@ app.get("/find_locations/:property_name", (req,res) => {
     if (req.session.user_level === "staff"){
         let property_name = req.params.property_name;
         property_name = property_name.split(" ").join("_");
-        connection.query("WITH ranked_cameras AS ( select * from (select cam.*, ROW_NUMBER() OVER (PARTITION BY camera_name ORDER By camera_update_date, camera_history_id DESC ) AS rn from camera_history as cam) as st where rn = 1) select p.site_short_name, l.location_id,l.location_name, l.latitude, l.longitude, rc.camera_id,rc.camera_name, rc.camera_update_date, rc.volunteer_name, rc.status, rc.activity, rc.battery_level, rc.notes from locations as l left join ranked_cameras as rc on l.location_id = rc.location_id inner join properties as p on l.site_id = p.site_id where p.site_short_name = ?", 
+        connection.query("WITH ranked_cameras AS ( select * from (select cam.*, ROW_NUMBER() OVER (PARTITION BY camera_name ORDER By camera_update_date, camera_history_id DESC ) AS rn from Camera_History as cam) as st where rn = 1) select p.site_short_name, l.location_id,l.location_name, l.latitude, l.longitude, rc.camera_id,rc.camera_name, rc.camera_update_date, rc.volunteer_name, rc.status, rc.activity, rc.battery_level, rc.notes from Locations as l left join ranked_cameras as rc on l.location_id = rc.location_id inner join Properties as p on l.site_id = p.site_id where p.site_short_name = ?", 
         [property_name], (err, result) => {
             if (err) throw err
             else {
@@ -903,17 +905,6 @@ app.get("/upload_images", (req,res) => {
     }
 });
 
-// app.get("/properties/:site_id/:site_name/:location_id/upload_files", (req, res) => {
-//     let site_name = req.params.site_name;
-//     let site_id = req.params.site_id;
-//     let location_id = req.params.location_id;
-//     if (req.session.user_level === "staff"){
-//         res.render("Upload/upload_form", { site_id, location_id, site_name });
-//     } else {
-//         res.send("You do not have a permission to get this information");
-//     };
-// });
-
 //take all needed info
 app.get("/properties/:property_name/locations/:location_name/info", (req,res) => {
     if (req.session.user_level === "staff"){
@@ -1027,6 +1018,6 @@ app.get("*", (req,res) => {
 });
 
 // listeting port
-app.listen(process.env.PORT || 3000, function () {
-    console.log("Listening on 3000");
-});
+app.listen(PORT, function () {
+    console.log("Listening on " + PORT );
+}); 

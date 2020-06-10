@@ -947,7 +947,7 @@ app.post("/upload/:site_id/:site_full_name/:location_id/:location_name/:camera_i
     dir = `./public/Images/${site_full_name}/${location_name}`;
     if (!fs.existsSync(dir)) { fs.mkdirSync(dir) };
 
-    res.redirect("/profile");
+
 
     let saveFiles = i => { 
         if (i < files.length){
@@ -977,6 +977,7 @@ app.post("/upload/:site_id/:site_full_name/:location_id/:location_name/:camera_i
                             } else {
                                     // trigger = exifData.image.ImageDescription;
                                     // trigger = trigger.substr(0, trigger.indexOf("\u0000") - 1);
+                                    let file_new_name = `${site_full_name}_${location_name}_${file.name}`
                                     camera_brand = exifData.image.Make;
                                     date_taken = exifData.exif.CreateDate;
                                     
@@ -992,7 +993,7 @@ app.post("/upload/:site_id/:site_full_name/:location_id/:location_name/:camera_i
                 };
             });
         } else {
-            console.log(`${req.session.full_name} have uploaded ${files.length} files. ${notDownloaded} files had errors`);
+            res.send(`${req.session.full_name} have uploaded ${files.length} files. ${notDownloaded} files had errors`);
             
         };
     };

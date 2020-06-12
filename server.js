@@ -929,7 +929,6 @@ app.get("/properties/:property_name/locations/:location_name/info", (req,res) =>
 
 //upload folder
 app.post("/upload/:site_id/:site_full_name/:location_id/:location_name/:camera_id/:camera_name/:memorystick_id", async (req,res) => {
-    let notDownloaded = 0;
     let {site_id, site_full_name, location_id, location_name, camera_id, camera_name, memorystick_id} = req.params;
     let zip = req.files.file;
     let date = moment().format("MM_DD_YYYY");
@@ -958,16 +957,16 @@ app.post("/upload/:site_id/:site_full_name/:location_id/:location_name/:camera_i
                             fs.rename(path.join(__dirname, dir, extracted_folder_name), path.join(__dirname, dir, `${date}`), (err) => {
                                 if (err) throw err;
                                 let images = fs.readdirSync(path.join(__dirname, dir, date));
-                                dir = `${dir}/${date}`;
+                                    dir = `${dir}/${date}`;
                                 renameImages(images, 0);
-                            })
+                            });
                     } catch (err) {
                         console.log(err);
-                        }
-                }
-            })
-        }
-    })
+                    };
+                };
+            });
+        };
+    });
 
     //function for renaming images after zip was uploaded and extracted
     let renameImages = async (images, i) => { 
@@ -976,10 +975,7 @@ app.post("/upload/:site_id/:site_full_name/:location_id/:location_name/:camera_i
                     renameImages(images, i + 1)
                 } else {
                     let file = images[i];
-
                     let file_path = path.join(__dirname,`${dir}/${file}`);
-                    // const exif_data = await exif.parseSync(file_path);
-                    // console.log(exif_data);
 
                     exif.parse(file_path, (err, data) => {
                         if (err) {

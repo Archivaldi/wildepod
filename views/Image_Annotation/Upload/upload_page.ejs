@@ -1,4 +1,5 @@
 <% include ../../partials/header %>
+<% include ../../partials/navbar %>
 <div class="container">
     <select name="property_name" id="properties" onchange="findLocations()">
         <option>Select a property</option>
@@ -39,7 +40,7 @@
         let location = $("#locations").val();
         let info = await $.ajax({url: `/properties/${property}/locations/${location}/info`});
         let form = $("<form>").attr("action", `/upload/${info.site_id}/${info.site_full_name}/${info.location_id}/${info.location_name}/${info.camera_id}/${info.camera_name}/${info.memorystick_id}`).attr("method", "POST").attr("enctype", "multipart/form-data");
-        let input = $("<input>").attr("type", "file").attr("name", "files").prop("webkitdirectory", true);
+        let input = $("<input>").attr("type", "file").attr("name", "file");
         let button = $("<button>").text("Upload");
             form.append(input, button);
             $("#form_div").append(form);

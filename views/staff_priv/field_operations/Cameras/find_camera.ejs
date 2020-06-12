@@ -35,6 +35,7 @@
         $.ajax({
             url: `/find_locations/${property}`
         }).then( async r => {   
+            console.log(r);
             let locations_div = $("#locations_div");
             locations_div.empty();
             $("#myMap").empty();
@@ -124,7 +125,7 @@
                         let activity_option_stick_changed = $("<option>").val("Stick Changed").text("Stick Changed");
                         let activity_option_st_and_bt_changed = $("<option>").val("Stick and battery changed").text("Stick/battery changed");
                         let activity_to_show = r[i].activity;
-                            if (activity_to_show.toLowerCase() === "placed" || activity_to_show.toLowerCase() === ""){
+                            if (activity_to_show.toLowerCase() === "placed" || activity_to_show.toLowerCase() === "" || activity_to_show === null) {
                                 activity_input.append(activity_option_placed, activity_option_checked, activity_option_removed, activity_option_stick_changed, activity_option_st_and_bt_changed);
                             } else if (activity_to_show.toLowerCase() === "checked"){
                                 activity_input.append(activity_option_checked, activity_option_placed, activity_option_removed, activity_option_stick_changed, activity_option_st_and_bt_changed);

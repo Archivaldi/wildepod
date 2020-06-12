@@ -6,6 +6,9 @@ const PORT = process.env.PORT || 3000;
 //fs package
 const fs = require('fs-extra');
 
+//unzip files
+const extract = require('extract-zip')
+
 const bodyParser = require("body-parser");
 app.set("view engine", "ejs");
 
@@ -26,7 +29,7 @@ let upload = require('express-fileupload')
 app.use(upload())
 
 //exif package
-const ExifImage = require('exif').ExifImage;
+const exif = require("jpeg-exif");
 
 //moment package for formating date
 const moment = require('moment');
@@ -925,70 +928,84 @@ app.get("/properties/:property_name/locations/:location_name/info", (req,res) =>
 });
 
 //upload folder
-app.post("/upload/:site_id/:site_full_name/:location_id/:location_name/:camera_id/:camera_name/:memorystick_id", (req,res) => {
+app.post("/upload/:site_id/:site_full_name/:location_id/:location_name/:camera_id/:camera_name/:memorystick_id", async (req,res) => {
     let notDownloaded = 0;
     let {site_id, site_full_name, location_id, location_name, camera_id, camera_name, memorystick_id} = req.params;
-    let files = req.files.files;
+    let zip = req.files.file;
+    let date = moment().format("MM_DD_YYYY");
 
     //take first directory and check if we already have it
     let dir = `./public/Images/${site_full_name}`;
-    if (!fs.existsSync(dir)) { fs.mkdirSync(dir) }
+    if (!fs.existsSync(path.join(__dirname, dir))) { fs.mkdirSync(path.join(__dirname,dir)) }
 
     //continue check directory
     dir = `./public/Images/${site_full_name}/${location_name}`;
-    if (!fs.existsSync(dir)) { fs.mkdirSync(dir) };
+    if (!fs.existsSync(path.join(__dirname,dir))) { fs.mkdirSync(path.join(__dirname,dir)) };
 
-
-
-    let saveFiles = i => { 
-        if (i < files.length){
-            let trigger = "";
-            let camera_brand = "";
-            let date_taken = "";
-            let file = files[i];
-            let full_path = path.join(__dirname, dir, `/${file.name}`);
-
-            file.mv(full_path, err => {
-                if (err) throw err
+    //move uploaded zip into zip folder and save it with a new name
+    let move_zip_path = path.join(__dirname, `./zip/${zip.name}`);
+    let zip_new_name = `${site_full_name} ${date}.zip`;
+    zip.mv(move_zip_path, err => {
+        if (err) throw err;
+        else {
+            res.send("The file was uploaded. Thank you");
+            fs.rename(move_zip_path, path.join(__dirname, `./zip/${zip_new_name}`), async err => {
+                if (err) throw err;
                 else {
-                    //take meta-data from image
                     try {
-                        new ExifImage({ image: files[i].data }, function (error, exifData) {
-                            if (error){
-                                console.log('Error in image: ' + error );
-                                let file_new_name = `${site_full_name}_${location_name}_${file.name}`
-                                fs.rename(path.join(__dirname, dir, `./${file.name}`), path.join(__dirname, dir, file_new_name), err => {
-                                    if (err) { console.log("ERROR in renaming: " + err) }
-                                    else { 
-                                        notDownloaded += 1;
-                                        saveFiles(i+1) 
-                                    };
-                                });
-                                
-                            } else {
-                                    // trigger = exifData.image.ImageDescription;
-                                    // trigger = trigger.substr(0, trigger.indexOf("\u0000") - 1);
-                                    let file_new_name = `${site_full_name}_${location_name}_${file.name}`
-                                    camera_brand = exifData.image.Make;
-                                    date_taken = exifData.exif.CreateDate;
-                                    
-                                    fs.rename(path.join(__dirname, dir, `./${file.name}`), path.join(__dirname, dir, file_new_name), err => {
-                                        if (err) { console.log("ERROR in renaming: " + err) }
-                                        else { saveFiles(i+1) };
-                                    });
-                            };
-                        });
-                    } catch (error) {
-                        console.log('Error: ' + error.message);
-                    };
-                };
-            });
+                            await extract(`./zip/${zip_new_name}`, { dir: path.join(__dirname, dir)});
+                            let extracted_folder_name = zip.name.substr(0, zip.name.length - 4);
+                            fs.rename(path.join(__dirname, dir, extracted_folder_name), path.join(__dirname, dir, `${date}`), (err) => {
+                                if (err) throw err;
+                                let images = fs.readdirSync(path.join(__dirname, dir, date));
+                                dir = `${dir}/${date}`;
+                                renameImages(images, 0);
+                            })
+                    } catch (err) {
+                        console.log(err);
+                        }
+                }
+            })
+        }
+    })
+
+    //function for renaming images after zip was uploaded and extracted
+    let renameImages = async (images, i) => { 
+            if (i < images.length){
+                if (images[i] === ".DS_Store"){
+                    renameImages(images, i + 1)
+                } else {
+                    let file = images[i];
+
+                    let file_path = path.join(__dirname,`${dir}/${file}`);
+                    // const exif_data = await exif.parseSync(file_path);
+                    // console.log(exif_data);
+
+                    exif.parse(file_path, (err, data) => {
+                        if (err) {
+                            console.log(err);
+                        } else {
+                            let trigger = data.ImageDescription;
+                            if (trigger === undefined){
+                                console.log(data);
+                            }
+                            let camera_brand = data.Make;
+                            let date_taken = data.DateTime;
+                            let file_new_name = `${site_full_name}_${location_name}_${trigger}_${date_taken}_${file}`;
+
+                            fs.rename(path.join(__dirname, dir, `./${file}`), path.join(__dirname, dir, file_new_name), err => {
+                                if (err) { console.log("ERROR in renaming: " + err) }
+                                else { renameImages(images, i + 1); };
+                            });
+
+                        };
+                });
+            };
         } else {
-            res.send(`${req.session.full_name} have uploaded ${files.length} files. ${notDownloaded} files had errors`);
-            
+            console.log("Done")
         };
     };
-    saveFiles(0);
+
 });
 
 //sign out and destroy session

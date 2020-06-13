@@ -31,6 +31,9 @@ app.use(upload())
 //exif package
 const exif = require("jpeg-exif");
 
+//uuid 
+const { v4: uuidv4 } = require('uuid');
+
 //moment package for formating date
 const moment = require('moment');
 //mysql package
@@ -914,7 +917,7 @@ app.get("/properties/:property_name/locations/:location_name/info", (req,res) =>
         let property_name = req.params.property_name;
             property_name = property_name.split(" ").join("_");
         let location_name = req.params.location_name;
-        connection.query("WITH ranked_cameras AS ( select * from (select cam.*, ROW_NUMBER() OVER (PARTITION BY camera_name ORDER By camera_update_date DESC, camera_history_id ASC) AS rn from camera_history as cam) as st where rn = 1) select p.site_short_name, p.site_full_name, lleft.location_id, lleft.location_name,p.site_id,rc.camera_id,rc.memorystick_id,rc.camera_name from locations as lleft join ranked_cameras as rc on lleft.location_id = rc.location_id inner join properties as p on lleft.site_id = p.site_id where p.site_short_name = ? AND lleft.location_name = ?",
+        connection.query("WITH ranked_cameras AS ( select * from (select cam.*, ROW_NUMBER() OVER (PARTITION BY camera_name ORDER By camera_update_date DESC, camera_history_id ASC) AS rn from camera_history as cam) as st where rn = 1) select p.site_short_name, p.site_full_name, lleft.location_id, lleft.location_name,p.site_id,rc.camera_id, rc.camera_name from locations as lleft join ranked_cameras as rc on lleft.location_id = rc.location_id inner join properties as p on lleft.site_id = p.site_id where p.site_short_name = ? AND lleft.location_name = ?",
         [property_name, location_name],
         (err, result) => {
             if (err) throw err;
@@ -928,10 +931,12 @@ app.get("/properties/:property_name/locations/:location_name/info", (req,res) =>
 });
 
 //upload folder
-app.post("/upload/:site_id/:site_full_name/:location_id/:location_name/:camera_id/:camera_name/:memorystick_id", async (req,res) => {
-    let {site_id, site_full_name, location_id, location_name, camera_id, camera_name, memorystick_id} = req.params;
+app.post("/upload/:site_id/:site_full_name/:location_id/:location_name/:camera_id/:camera_name", async (req,res) => {
+    let {site_id, site_full_name, location_id, location_name, camera_id, camera_name} = req.params;
+    let memorystick_id = req.body.memorystick_id;
     let zip = req.files.file;
     let date = moment().format("MM_DD_YYYY");
+    let today = moment().format("YYYY-MM-DD");
 
     //take first directory and check if we already have it
     let dir = `./public/Images/${site_full_name}`;
@@ -952,14 +957,22 @@ app.post("/upload/:site_id/:site_full_name/:location_id/:location_name/:camera_i
                 if (err) throw err;
                 else {
                     try {
-                            await extract(`./zip/${zip_new_name}`, { dir: path.join(__dirname, dir)});
-                            let extracted_folder_name = zip.name.substr(0, zip.name.length - 4);
-                            fs.rename(path.join(__dirname, dir, extracted_folder_name), path.join(__dirname, dir, `${date}`), (err) => {
-                                if (err) throw err;
-                                let images = fs.readdirSync(path.join(__dirname, dir, date));
-                                    dir = `${dir}/${date}`;
-                                renameImages(images, 0);
-                            });
+                        await extract(`./zip/${zip_new_name}`, { dir: path.join(__dirname, dir)});
+                        let extracted_folder_name = zip.name.substr(0, zip.name.length - 4);
+                        fs.rename(path.join(__dirname, dir, extracted_folder_name), path.join(__dirname, dir, `${date}`), (err) => {
+                            if (err) throw err;
+                            let images = fs.readdirSync(path.join(__dirname, dir, date));
+                                dir = `${dir}/${date}`;
+                                connection.query("INSERT INTO Uploads (provider, site_id, location_id, camera_id, memorystick_id, user_id, upload_date, number_of_images) VALUES (?,?,?,?,?,?,?,?)",
+                                ["test", site_id, location_id, camera_id, memorystick_id, req.session.user_id, today, images.length],
+                                (err, result) => {
+                                    if (err) throw err;
+                                    else {
+                                        let upload_id = result.insertId;
+                                        renameImages(images, 0, upload_id);
+                                    };
+                                });
+                        });
                     } catch (err) {
                         console.log(err);
                     };
@@ -968,11 +981,14 @@ app.post("/upload/:site_id/:site_full_name/:location_id/:location_name/:camera_i
         };
     });
 
+    let values_for_Images = [];
+    let values_for_Image_Status = [];
+
     //function for renaming images after zip was uploaded and extracted
-    let renameImages = async (images, i) => { 
+    let renameImages = async (images, i, insert_id) => { 
             if (i < images.length){
                 if (images[i] === ".DS_Store"){
-                    renameImages(images, i + 1)
+                    renameImages(images, i + 1, insert_id)
                 } else {
                     let file = images[i];
                     let file_path = path.join(__dirname,`${dir}/${file}`);
@@ -981,27 +997,56 @@ app.post("/upload/:site_id/:site_full_name/:location_id/:location_name/:camera_i
                         if (err) {
                             console.log(err);
                         } else {
-                            let trigger = data.ImageDescription;
-                            if (trigger === undefined){
-                                console.log(data);
+                            let trigger_id = data.ImageDescription;
+                            if (trigger_id === undefined){
+                                trigger_id = null;
                             }
                             let camera_brand = data.Make;
                             let date_taken = data.DateTime;
-                            let file_new_name = `${site_full_name}_${location_name}_${trigger}_${date_taken}_${file}`;
+                            let file_new_name = `${site_full_name}_${location_name}_${camera_name}_${file}`;
 
                             fs.rename(path.join(__dirname, dir, `./${file}`), path.join(__dirname, dir, file_new_name), err => {
                                 if (err) { console.log("ERROR in renaming: " + err) }
-                                else { renameImages(images, i + 1); };
+                                else { 
+                                    let image_id = uuidv4();
+                                    let row_for_Images = [image_id, insert_id, trigger_id, file_new_name, path.join(__dirname, dir, file_new_name), date_taken];
+                                    let row_for_Image_Status = [image_id, moment().format("YYYY-MM-DD hh:mm:ss"), req.session.user_id, "New"];
+                                    values_for_Images.push(row_for_Images);
+                                    values_for_Image_Status.push(row_for_Image_Status);
+                                    renameImages(images, i+1, insert_id);
+                                };
                             });
-
                         };
                 });
             };
         } else {
-            console.log("Done")
+            insert_into_Images(values_for_Images);
         };
     };
 
+    //insert all values into Images table
+    let insert_into_Images = (values) => {
+        connection.query("INSERT INTO Images (image_id, upload_id, trigger_id, image_name, image_path, image_time) VALUES ?", 
+        [values],
+        (err, result) => {
+            if (err) throw err.sqlMessage;
+            else {
+                insert_into_Image_Status(values_for_Image_Status);
+            };
+        });
+    };
+
+    //insert all values into Image_Status table
+    let insert_into_Image_Status = (values) => {
+        connection.query("INSERT INTO Image_Status (image_id, update_time, user_id, status) VALUES ?",
+        [values],
+        (err, result) => {
+            if (err) throw err.sqlMessage;
+            else {
+                console.log("ALL DONE!!!!!!!!!!!!!!!!!!");
+            };
+        });
+    };
 });
 
 //sign out and destroy session

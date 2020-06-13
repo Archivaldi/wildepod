@@ -11,7 +11,8 @@ html {
 
 body {
   box-sizing: border-box;
-  margin-left: 8rem; }
+  margin-left: 8rem;
+  background-color: #A2E8B4; }
 
 @keyframes moveInBottom {
   0% {
@@ -150,7 +151,7 @@ body {
 .welcome {
   position: relative;
   height: 95vh;
-  background-image: linear-gradient(to right bottom, rgba(126, 213, 111, 0.8), rgba(40, 180, 133, 0.8)), url(./img/welcome_picture.jpg);
+  background-image: linear-gradient(to right bottom, rgba(126, 213, 111, 0.8), rgba(40, 180, 133, 0.8)), url(../img/main.jpg);
   background-size: cover;
   background-position: top;
   clip-path: polygon(0 0, 100% 0, 100% 90%, 0 100%); }

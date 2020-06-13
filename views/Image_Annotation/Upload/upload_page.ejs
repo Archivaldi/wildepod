@@ -39,11 +39,16 @@
         let property = $("#properties").val();
         let location = $("#locations").val();
         let info = await $.ajax({url: `/properties/${property}/locations/${location}/info`});
-        let form = $("<form>").attr("action", `/upload/${info.site_id}/${info.site_full_name}/${info.location_id}/${info.location_name}/${info.camera_id}/${info.camera_name}/${info.memorystick_id}`).attr("method", "POST").attr("enctype", "multipart/form-data");
+        let form = $("<form>").attr("action", `/upload/${info.site_id}/${info.site_full_name}/${info.location_id}/${info.location_name}/${info.camera_id}/${info.camera_name}`).attr("method", "POST").attr("enctype", "multipart/form-data");
+        let momerystick_div = $("<div>");
+        let momorystick_label = $("<label>").text("Memorystick id: ").attr("for", "memorystick_id");
+        let memorystick_id = $("<input>").attr("type", "text").attr("name", "memorystick_id").attr("id", "memorystick_id");
+            momerystick_div.append(momorystick_label, memorystick_id)
         let input = $("<input>").attr("type", "file").attr("name", "file");
         let button = $("<button>").text("Upload");
-            form.append(input, button);
+            form.append( momerystick_div, input, button);
             $("#form_div").append(form);
+            console.log(info);
 
     }
 </script>

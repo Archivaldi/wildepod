@@ -16,7 +16,8 @@
     "fs-extra": "9.0.0",
     "jpeg-exif": "^1.1.4",
     "moment": "2.24.0",
-    "mysql": "2.18.1"
+    "mysql": "2.18.1",
+    "uuid": "^8.1.0"
   },
   "devDependencies": {
     "node-sass": "4.14.1",

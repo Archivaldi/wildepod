@@ -1009,7 +1009,7 @@ app.post("/upload/:site_id/:site_full_name/:location_id/:location_name/:camera_i
                                 if (err) { console.log("ERROR in renaming: " + err) }
                                 else { 
                                     let image_id = uuidv4();
-                                    let row_for_Images = [image_id, insert_id, trigger_id, file_new_name, path.join(__dirname, dir, file_new_name), date_taken];
+                                    let row_for_Images = [image_id, insert_id, trigger_id, file_new_name, `/Images/${site_full_name}/${location_name}/${date}/${file_new_name}`, date_taken];
                                     let row_for_Image_Status = [image_id, moment().format("YYYY-MM-DD hh:mm:ss"), req.session.user_id, "New"];
                                     values_for_Images.push(row_for_Images);
                                     values_for_Image_Status.push(row_for_Image_Status);
@@ -1047,6 +1047,17 @@ app.post("/upload/:site_id/:site_full_name/:location_id/:location_name/:camera_i
             };
         });
     };
+});
+
+///////////////////////////////////////////////////           CLEANING         ///////////////////////////////////////////////////////////////
+app.get("/cleaning", (req,res) => {
+    connection.query("SELECT * FROM Images LIMIT 10", (err, result) => {
+        if (err) throw err;
+        else {
+            console.log(result);
+            res.render("Image_Annotation/Cleaning/cleaning_page", {images: result});
+        };
+    });
 });
 
 //sign out and destroy session

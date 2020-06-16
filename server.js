@@ -394,7 +394,7 @@ app.post("/properties/:site_name/locations", (req,res) => {
 app.get("/properties/:id/locations", (req, res) => {
     if (req.session.user_level === "staff") {
         let id = req.params.id;
-        connection.query("select location_id, site_id, site_full_name, site_short_name, location_name, latitude, longitude, location_status, locations.notes as notes, trail_type from locations JOIN Properties USING (site_id) where site_id = ?", [id],
+        connection.query("select location_id, site_id, site_full_name, site_short_name, location_name, latitude, longitude, location_status, Locations.notes as notes, trail_type from Locations JOIN Properties USING (site_id) where site_id = ?", [id],
             (err, result) => {
                 if (err) { console.log(err) };
 
@@ -558,8 +558,8 @@ app.post("/properties/:property_id/delete_location/:location_id", (req, res) => 
         (err, result) => {
             if (err) { console.error(err) }
             else { res.redirect(`/properties/${property_id}/locations`) }
-        })
-})
+        });
+});
 
 //render update form for specific location
 app.post("/properties/:property_id/update_location/:location_id", (req, res) => {
@@ -568,8 +568,8 @@ app.post("/properties/:property_id/update_location/:location_id", (req, res) => 
         (err, result) => {
             if (err) { console.error(err) }
             else { res.render("staff_priv/field_operations/Locations/edit_local_form", { result }) }
-        })
-})
+        });
+});
 
 app.post("/sites/:site_id/save_updated_location/:location_id", (req, res) => {
     let site_id = req.params.site_id;
@@ -584,7 +584,7 @@ app.post("/sites/:site_id/save_updated_location/:location_id", (req, res) => {
         [site_id, loc_id, loc_name, latitude, longitude, trail_type, notes],
         (err, result) => {
             res.redirect("/profile");
-        })
+        });
 });
 
 /////////////////////////////////////////////////        Cameras    ///////////////////////////////
@@ -600,7 +600,7 @@ app.get("/field_operations", (req,res) => {
         });
     } else {
         res.send("You do not have a permission to get this information");
-    }
+    };
 });
 
 //find locations for drop-dowm menu
@@ -625,10 +625,10 @@ app.get("/addNewCamera", (req, res) => {
     if (req.session.user_level === "staff") {
         connection.query("SELECT DISTINCT(brand) FROM Cameras ORDER BY brand;", (err, result) => {
             if (err) {
-                console.error(err)
+                console.error(err);
             } else {
                 res.render('staff_priv/field_operations/Cameras/create_new_camera', { result });
-            }
+            };
         });
     } else if (req.session.user_name) {
         res.redirect('/profile')

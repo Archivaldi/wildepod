@@ -394,7 +394,7 @@ app.post("/properties/:site_name/locations", (req,res) => {
 app.get("/properties/:id/locations", (req, res) => {
     if (req.session.user_level === "staff") {
         let id = req.params.id;
-        connection.query("select location_id, site_id, site_full_name, site_short_name, location_name, latitude, longitude, location_status, locations.notes as notes, trail_type from Locations JOIN Properties USING (site_id) where site_id = ?", [id],
+        connection.query("select location_id, site_id, site_full_name, site_short_name, location_name, latitude, longitude, location_status, Locations.notes as notes, trail_type from Locations JOIN Properties USING (site_id) where site_id = ?", [id],
             (err, result) => {
                 if (err) { console.log(err) };
 

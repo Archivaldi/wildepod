@@ -1051,7 +1051,7 @@ app.post("/upload/:site_id/:site_full_name/:location_id/:location_name/:camera_i
 
 ///////////////////////////////////////////////////           CLEANING         ///////////////////////////////////////////////////////////////
 app.get("/cleaning", (req,res) => {
-    connection.query("SELECT * FROM Images LIMIT 10", (err, result) => {
+    connection.query("SELECT * FROM Images LIMIT 12", (err, result) => {
         if (err) throw err;
         else {
             console.log(result);

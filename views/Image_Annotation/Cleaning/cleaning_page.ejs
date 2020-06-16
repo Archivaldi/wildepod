@@ -1,15 +1,21 @@
 <% include ../../partials/header %>
 <% include ../../partials/navbar %>
 
-<div class="container">
-    <% for (let i = 0; i < images.length - 1; i+=2 ) { %>
-            <div class="row">
-                <div class="col-1-of-2">
-                    <img style="width: 100%;" src="<%= images[i].image_path %>" alt="<%= images[i].image_name %>">
+<div class="cleaning_page">
+        <% for (let i = 0; i < images.length - 1; i+=3 ) { %>
+                <div class="row">
+                    <div class="col-1-of-4">
+                        <img style="width: 100%; height: 20rem;" src="<%= images[i].image_path %>" alt="<%= images[i].image_name %>">
+                    </div>
+                    <div class="col-1-of-4">
+                        <img style="width: 100%; height: 20rem;" src="<%= images[i+1].image_path %>" alt="<%= images[i].image_name %>">
+                    </div>
+                    <div class="col-1-of-4">
+                        <img style="width: 100%; height: 20rem;" src="<%= images[i+1].image_path %>" alt="<%= images[i].image_name %>">
+                    </div>
+                    <div class="col-1-of-4">
+                        <img style="width: 100%; height: 20rem;" src="<%= images[i+1].image_path %>" alt="<%= images[i].image_name %>">
+                    </div>
                 </div>
-                <div class="col-1-of-2">
-                    <img style="width: 100%;" src="<%= images[i+1].image_path %>" alt="<%= images[i].image_name %>">
-                </div>
-            </div>
-    <% } %>
+        <% } %>
 </div>

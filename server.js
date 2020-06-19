@@ -903,7 +903,7 @@ app.get("/upload_images", (req,res) => {
         (err, result) => {
             if (err) throw err;
             else {
-                res.render("Image_Annotation/Upload/upload_page", {properties: result});
+                res.render("Image_Annotation/Upload/upload_page", {properties: result, message: ""});
             }
         });
     } else {
@@ -946,53 +946,25 @@ app.post("/upload/:site_id/:site_full_name/:location_id/:location_name/:camera_i
     dir = `./public/Images/${site_full_name}/${location_name}`;
     if (!fs.existsSync(path.join(__dirname,dir))) { fs.mkdirSync(path.join(__dirname,dir)) };
 
-    connection.query("INSERT INTO Uploads (provider, site_id, location_id, camera_id, memorystick_id, user_id, upload_date, number_of_images) VALUES (?,?,?,?,?,?,?,?)",
-                    ["test", site_id, location_id, camera_id, memorystick_id, req.session.user_id, today, folder.length],
-                    (err, result) => {
-                        if (err) throw err;
-                        else {
-                            let upload_id = result.insertId;
-                            moveImages(folder, 0, upload_id);
-                        };
+    connection.query("SELECT * FROM Properties", (err, result) => {
+        if (err) throw err;
+        else {
+            res.render("Image_Annotation/Upload/upload_page", {properties: result, message: `Success! You uploaded ${folder.file.length} files! Thank you!`});
+            insertIntoUploads();
+        };
     });
 
-
-
-
-    // //move uploaded zip into zip folder and save it with a new name
-    // let move_folder_path = path.join(__dirname, `./stage/${zip.name}`);
-    // let folder_new_name = `${site_full_name} ${date}`;
-    // folder.mv(move__path, err => {
-    //     if (err) throw err;
-    //     else {
-    //         res.send("The file was uploaded. Thank you");
-    //         fs.rename(move_zip_path, path.join(__dirname, `./zip/${zip_new_name}`), async err => {
-    //             if (err) throw err;
-    //             else {
-    //                 try {
-    //                     await extract(`./zip/${zip_new_name}`, { dir: path.join(__dirname, dir)});
-    //                     let extracted_folder_name = zip.name.substr(0, zip.name.length - 4);
-    //                     fs.rename(path.join(__dirname, dir, extracted_folder_name), path.join(__dirname, dir, `${date}`), (err) => {
-    //                         if (err) throw err;
-    //                         let images = fs.readdirSync(path.join(__dirname, dir, date));
-    //                             dir = `${dir}/${date}`;
-    //                             connection.query("INSERT INTO Uploads (provider, site_id, location_id, camera_id, memorystick_id, user_id, upload_date, number_of_images) VALUES (?,?,?,?,?,?,?,?)",
-    //                             ["test", site_id, location_id, camera_id, memorystick_id, req.session.user_id, today, images.length],
-    //                             (err, result) => {
-    //                                 if (err) throw err;
-    //                                 else {
-    //                                     let upload_id = result.insertId;
-    //                                     moveImages(images, 0, upload_id);
-    //                                 };
-    //                             });
-    //                     });
-    //                 } catch (err) {
-    //                     console.log(err);
-    //                 };
-    //             };
-    //         });
-    //     };
-    // });
+    let insertIntoUploads = () => {
+        connection.query("INSERT INTO Uploads (provider, site_id, location_id, camera_id, memorystick_id, user_id, upload_date, number_of_images) VALUES (?,?,?,?,?,?,?,?)",
+        ["test", site_id, location_id, camera_id, memorystick_id, req.session.user_id, today, folder.length],
+        (err, result) => {
+            if (err) throw err;
+            else {
+                let upload_id = result.insertId;
+                moveImages(folder, 0, upload_id);
+            };
+        });
+    };
 
     let values_for_Images = [];
     let values_for_Image_Status = [];
@@ -1022,7 +994,7 @@ app.post("/upload/:site_id/:site_full_name/:location_id/:location_name/:camera_i
                                         if (err) { console.log("ERROR in renaming: " + err) }
                                         else { 
                                             let image_id = uuidv4();
-                                            let row_for_Images = [image_id, insert_id, trigger_id, file_new_name, `/Images/${site_full_name}/${location_name}/${date}/${file_new_name}`, date_taken];
+                                            let row_for_Images = [image_id, insert_id, trigger_id, file_new_name, `/Images/${site_full_name}/${location_name}/${file_new_name}`, date_taken];
                                             let row_for_Image_Status = [image_id, moment().format("YYYY-MM-DD hh:mm:ss"), req.session.user_id, "New"];
                                             values_for_Images.push(row_for_Images);
                                             values_for_Image_Status.push(row_for_Image_Status);
@@ -1035,7 +1007,6 @@ app.post("/upload/:site_id/:site_full_name/:location_id/:location_name/:camera_i
                 });
             }
         } else {
-            console.log("Done")
             insert_into_Images(values_for_Images);
         };
     };
@@ -1059,21 +1030,58 @@ app.post("/upload/:site_id/:site_full_name/:location_id/:location_name/:camera_i
         (err, result) => {
             if (err) throw err.sqlMessage;
             else {
-                console.log("ALL DONE!!!!!!!!!!!!!!!!!!");
-            };
+                console.log(`User ${req.session.full_name} has uploaded ${folder.file.length} files on ${moment().format("MM/DD/YYYY")}`);           
+             };
         });
     };
 });
 
 ///////////////////////////////////////////////////           CLEANING         ///////////////////////////////////////////////////////////////
 app.get("/cleaning", (req,res) => {
-    connection.query("SELECT * FROM Images LIMIT 12", (err, result) => {
+connection.query("SELECT im.image_id, im.upload_id, im.trigger_id, im.image_name, im.image_path, im.image_time FROM Images as im INNER JOIN Image_Status as imst ON im.image_id = imst.image_id WHERE imst.status = 'NEW' and imst.image_id NOT IN (SELECT image_id FROM Locked_Images) LIMIT 12", 
+(err, images) => {
         if (err) throw err;
         else {
-            console.log(result);
-            res.render("Image_Annotation/Cleaning/cleaning_page", {images: result});
+            lockImages(images);
         };
     });
+
+    const lockImages = (images) => {
+        locked_images = [];
+        images.map(image => locked_images.push([req.session.user_id, image.image_id]));
+        connection.query("INSERT INTO Locked_Images (user_id, image_id) VALUES ?", [locked_images], (err, result) => {
+            if (err) throw err;
+            else {
+                res.render("Image_Annotation/Cleaning/cleaning_page", {images});
+            };
+        });
+    };
+});
+
+//unlock images and change their status in the database
+app.post("/clean_images", (req,res) => {
+    let {all_id, usable, blank} = req.body;
+    connection.query("DELETE FROM Locked_Images WHERE image_id = ?", [all_id], (err, result) => {
+        if (err) throw err;
+        else {
+            markAsUsable();
+        };
+    });
+
+    let markAsUsable = () => {
+        connection.query("UPDATE Image_Status SET image_status = 'Usable' WHERE image_id = ?", [usable], (err, result) => {
+            if (err) throw err;
+            else {
+                markAsBlank();
+            };
+        });
+    };
+
+    let markAsBlank = () => {
+        connection.query("UPDATE Image_Status SET image_status = 'Blank' WHERE image_id = ?", [blank], (err, result) => {
+            console.log("All done");
+        });
+    };
 });
 
 //sign out and destroy session

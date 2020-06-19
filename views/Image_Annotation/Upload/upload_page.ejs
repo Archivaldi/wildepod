@@ -11,6 +11,11 @@
     <div id="locations_div"></div>
     <div id="form_div"></div>
 </div>
+<% if (message !== "") { %>
+    <div class="massage">
+        <h1><%= message %></h1>
+    </div>
+<% } %>
 <script>
     const findLocations = () => {
         let property = $("#properties").val();

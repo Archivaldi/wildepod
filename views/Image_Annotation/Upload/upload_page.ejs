@@ -45,6 +45,8 @@
         let memorystick_id = $("<input>").attr("type", "text").attr("name", "memorystick_id").attr("id", "memorystick_id");
             momerystick_div.append(momorystick_label, memorystick_id)
         let input = $("<input>").attr("type", "file").attr("name", "file");
+            input.prop("mozdirectory", true).prop("directory", true).prop("webkitdirectory", true).prop("msdirectory", true).prop("odirectory", true);
+            
         let button = $("<button>").text("Upload");
             form.append( momerystick_div, input, button);
             $("#form_div").append(form);

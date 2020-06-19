@@ -917,7 +917,7 @@ app.get("/properties/:property_name/locations/:location_name/info", (req,res) =>
         let property_name = req.params.property_name;
             property_name = property_name.split(" ").join("_");
         let location_name = req.params.location_name;
-        connection.query("WITH ranked_cameras AS ( select * from (select cam.*, ROW_NUMBER() OVER (PARTITION BY camera_name ORDER By camera_update_date DESC, camera_history_id ASC) AS rn from camera_history as cam) as st where rn = 1) select p.site_short_name, p.site_full_name, lleft.location_id, lleft.location_name,p.site_id,rc.camera_id, rc.camera_name from locations as lleft join ranked_cameras as rc on lleft.location_id = rc.location_id inner join properties as p on lleft.site_id = p.site_id where p.site_short_name = ? AND lleft.location_name = ?",
+        connection.query("WITH ranked_cameras AS ( select * from (select cam.*, ROW_NUMBER() OVER (PARTITION BY camera_name ORDER By camera_update_date DESC, camera_history_id ASC) AS rn from Camera_History as cam) as st where rn = 1) select p.site_short_name, p.site_full_name, lleft.location_id, lleft.location_name,p.site_id,rc.camera_id, rc.camera_name from Locations as lleft join ranked_cameras as rc on lleft.location_id = rc.location_id inner join Properties as p on lleft.site_id = p.site_id where p.site_short_name = ? AND lleft.location_name = ?",
         [property_name, location_name],
         (err, result) => {
             if (err) throw err;

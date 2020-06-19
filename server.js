@@ -934,7 +934,7 @@ app.get("/properties/:property_name/locations/:location_name/info", (req,res) =>
 app.post("/upload/:site_id/:site_full_name/:location_id/:location_name/:camera_id/:camera_name", async (req,res) => {
     let {site_id, site_full_name, location_id, location_name, camera_id, camera_name} = req.params;
     let memorystick_id = req.body.memorystick_id;
-    let zip = req.files.file;
+    let folder = req.files;
     let date = moment().format("MM_DD_YYYY");
     let today = moment().format("YYYY-MM-DD");
 
@@ -946,80 +946,96 @@ app.post("/upload/:site_id/:site_full_name/:location_id/:location_name/:camera_i
     dir = `./public/Images/${site_full_name}/${location_name}`;
     if (!fs.existsSync(path.join(__dirname,dir))) { fs.mkdirSync(path.join(__dirname,dir)) };
 
-    //move uploaded zip into zip folder and save it with a new name
-    let move_zip_path = path.join(__dirname, `./zip/${zip.name}`);
-    let zip_new_name = `${site_full_name} ${date}.zip`;
-    zip.mv(move_zip_path, err => {
-        if (err) throw err;
-        else {
-            res.send("The file was uploaded. Thank you");
-            fs.rename(move_zip_path, path.join(__dirname, `./zip/${zip_new_name}`), async err => {
-                if (err) throw err;
-                else {
-                    try {
-                        await extract(`./zip/${zip_new_name}`, { dir: path.join(__dirname, dir)});
-                        let extracted_folder_name = zip.name.substr(0, zip.name.length - 4);
-                        fs.rename(path.join(__dirname, dir, extracted_folder_name), path.join(__dirname, dir, `${date}`), (err) => {
-                            if (err) throw err;
-                            let images = fs.readdirSync(path.join(__dirname, dir, date));
-                                dir = `${dir}/${date}`;
-                                connection.query("INSERT INTO Uploads (provider, site_id, location_id, camera_id, memorystick_id, user_id, upload_date, number_of_images) VALUES (?,?,?,?,?,?,?,?)",
-                                ["test", site_id, location_id, camera_id, memorystick_id, req.session.user_id, today, images.length],
-                                (err, result) => {
-                                    if (err) throw err;
-                                    else {
-                                        let upload_id = result.insertId;
-                                        renameImages(images, 0, upload_id);
-                                    };
-                                });
-                        });
-                    } catch (err) {
-                        console.log(err);
-                    };
-                };
-            });
-        };
+    connection.query("INSERT INTO Uploads (provider, site_id, location_id, camera_id, memorystick_id, user_id, upload_date, number_of_images) VALUES (?,?,?,?,?,?,?,?)",
+                    ["test", site_id, location_id, camera_id, memorystick_id, req.session.user_id, today, folder.length],
+                    (err, result) => {
+                        if (err) throw err;
+                        else {
+                            let upload_id = result.insertId;
+                            moveImages(folder, 0, upload_id);
+                        };
     });
+
+
+
+
+    // //move uploaded zip into zip folder and save it with a new name
+    // let move_folder_path = path.join(__dirname, `./stage/${zip.name}`);
+    // let folder_new_name = `${site_full_name} ${date}`;
+    // folder.mv(move__path, err => {
+    //     if (err) throw err;
+    //     else {
+    //         res.send("The file was uploaded. Thank you");
+    //         fs.rename(move_zip_path, path.join(__dirname, `./zip/${zip_new_name}`), async err => {
+    //             if (err) throw err;
+    //             else {
+    //                 try {
+    //                     await extract(`./zip/${zip_new_name}`, { dir: path.join(__dirname, dir)});
+    //                     let extracted_folder_name = zip.name.substr(0, zip.name.length - 4);
+    //                     fs.rename(path.join(__dirname, dir, extracted_folder_name), path.join(__dirname, dir, `${date}`), (err) => {
+    //                         if (err) throw err;
+    //                         let images = fs.readdirSync(path.join(__dirname, dir, date));
+    //                             dir = `${dir}/${date}`;
+    //                             connection.query("INSERT INTO Uploads (provider, site_id, location_id, camera_id, memorystick_id, user_id, upload_date, number_of_images) VALUES (?,?,?,?,?,?,?,?)",
+    //                             ["test", site_id, location_id, camera_id, memorystick_id, req.session.user_id, today, images.length],
+    //                             (err, result) => {
+    //                                 if (err) throw err;
+    //                                 else {
+    //                                     let upload_id = result.insertId;
+    //                                     moveImages(images, 0, upload_id);
+    //                                 };
+    //                             });
+    //                     });
+    //                 } catch (err) {
+    //                     console.log(err);
+    //                 };
+    //             };
+    //         });
+    //     };
+    // });
 
     let values_for_Images = [];
     let values_for_Image_Status = [];
 
     //function for renaming images after zip was uploaded and extracted
-    let renameImages = async (images, i, insert_id) => { 
-            if (i < images.length){
-                if (images[i] === ".DS_Store"){
-                    renameImages(images, i + 1, insert_id)
+    let moveImages = async (images, i, insert_id) => { 
+            if (i < images.file.length){
+                if (images.file[i].name === ".DS_Store"){
+                    moveImages(images, i + 1, insert_id)
                 } else {
-                    let file = images[i];
-                    let file_path = path.join(__dirname,`${dir}/${file}`);
-
-                    exif.parse(file_path, (err, data) => {
-                        if (err) {
-                            console.log(err);
-                        } else {
-                            let trigger_id = data.ImageDescription;
-                            if (trigger_id === undefined){
-                                trigger_id = null;
-                            }
-                            let camera_brand = data.Make;
-                            let date_taken = data.DateTime;
-                            let file_new_name = `${site_full_name}_${location_name}_${camera_name}_${file}`;
-
-                            fs.rename(path.join(__dirname, dir, `./${file}`), path.join(__dirname, dir, file_new_name), err => {
-                                if (err) { console.log("ERROR in renaming: " + err) }
-                                else { 
-                                    let image_id = uuidv4();
-                                    let row_for_Images = [image_id, insert_id, trigger_id, file_new_name, `/Images/${site_full_name}/${location_name}/${date}/${file_new_name}`, date_taken];
-                                    let row_for_Image_Status = [image_id, moment().format("YYYY-MM-DD hh:mm:ss"), req.session.user_id, "New"];
-                                    values_for_Images.push(row_for_Images);
-                                    values_for_Image_Status.push(row_for_Image_Status);
-                                    renameImages(images, i+1, insert_id);
+                    let file = images.file[i];
+                    file.mv(path.join(__dirname, dir, `./${file.name}`), err => {
+                        if (err) throw err;
+                        else {
+                            let file_path = path.join(__dirname,`${dir}/${file.name}`);
+                            exif.parse(file_path, (err, data) => {
+                                if (err) throw err;
+                                else {
+                                    let trigger_id = data.ImageDescription;
+                                    if (trigger_id === undefined){
+                                        trigger_id = null;
+                                    }
+                                    let date_taken = data.DateTime;
+                                    let file_new_name = `${site_full_name}_${location_name}_${camera_name}_${file.name}`;
+        
+                                    fs.rename(path.join(__dirname, dir, `./${file.name}`), path.join(__dirname, dir, file_new_name), err => {
+                                        if (err) { console.log("ERROR in renaming: " + err) }
+                                        else { 
+                                            let image_id = uuidv4();
+                                            let row_for_Images = [image_id, insert_id, trigger_id, file_new_name, `/Images/${site_full_name}/${location_name}/${date}/${file_new_name}`, date_taken];
+                                            let row_for_Image_Status = [image_id, moment().format("YYYY-MM-DD hh:mm:ss"), req.session.user_id, "New"];
+                                            values_for_Images.push(row_for_Images);
+                                            values_for_Image_Status.push(row_for_Image_Status);
+                                            moveImages(images, i+1, insert_id);
+                                        };
+                                    });
                                 };
-                            });
-                        };
+                        });
+                    };
                 });
-            };
+            }
         } else {
+            console.log("Done")
             insert_into_Images(values_for_Images);
         };
     };

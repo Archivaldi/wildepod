@@ -7,9 +7,13 @@
             <option value="<%= properties[i].site_full_name%>"><%= properties[i].site_full_name%></option>
         <% } %>
     </select>
+    <div>
+        <button onclick="show_form()">Check Uploads</button>
+    </div>
     <br>
     <div id="locations_div"></div>
     <div id="form_div"></div>
+    <div id="check_uploading"></div>
 </div>
 <% if (message !== "") { %>
     <div class="massage">
@@ -17,8 +21,45 @@
     </div>
 <% } %>
 <script>
+    const show_form = () => {
+        let check_div = $("#check_uploading");
+            check_div.empty();
+        let camera_name_div = $("<div>")
+        let camera_name_label = $("<label>").attr("for", "camera_name").text("Camera name: ");
+        let camera_name_input = $("<input>").attr("type", "text").attr("id", "camera_name").prop("required", true);
+            camera_name_div.append( camera_name_label ,camera_name_input)
+        let button_div = $("<div>");
+        let button = $("<button>").text("Check").attr("onclick", "check_uploads()");
+            button_div.append(button);
+            check_div.append(camera_name_div, button_div);
+    };
+
+    const check_uploads = () => {
+        let camera_name = $("#camera_name").val();
+        let check_uploading = $("#check_uploading");
+
+            if (camera_name === "") {
+                check_uploading.append("<h1>Please write camera name</h1>")
+            } else {
+                check_uploading.empty();
+                $.ajax({
+                    url: `/check_uploads/${camera_name}`,
+                    success: function(r){
+                        let row = $("<div>").attr("class", "row");
+                        let last_visit = $("<div>").attr("class", "col-1-of-2");
+                            last_visit.append(`<h1>This camera was ${r.last_visit.activity} on ${(r.last_visit.camera_update_date).slice(0, r.last_visit.camera_update_date.indexOf("T"))}</h1>`);
+                        let last_upload = $("<div>").attr("class", "col-1-of-2");
+                            last_upload.append(`Images from this camera were uploaded last time on ${(r.upload.upload_date).slice(0, r.upload.upload_date.indexOf("T"))}`);
+                            row.append( last_visit,last_upload);
+                            check_uploading.append(row);
+                    }
+                })
+            };
+    };
+
     const findLocations = () => {
         let property = $("#properties").val();
+        $("#check_uploading").empty();
 
         $.ajax({
             url: `/properties/${property}/locations`,
@@ -41,6 +82,8 @@
     };
 
     const showForm = async () => {
+        $("#check_uploading").empty();
+
         let property = $("#properties").val();
         let location = $("#locations").val();
         let info = await $.ajax({url: `/properties/${property}/locations/${location}/info`});

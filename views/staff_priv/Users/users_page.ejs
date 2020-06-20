@@ -53,13 +53,9 @@
                 let email = $("<p>").text(r[i].email);
                 email_col.append(email);
                 let edit_col = $("<div>").attr("class", "col-md-2");
-                let edit_button = $("<button>").attr("class", "edit");
-                    edit_button.attr("data", r[i].user_id);
-                    edit_button.text("Edit");
+                let edit_button = $("<button>").attr("class", "edit").attr("data", r[i].user_id).text("Edit");
                 edit_col.append(edit_button);
-                row.append(name_col)
-                row.append(email_col)
-                row.append(edit_col);
+                row.append(name_col, email_col, edit_col);
             }
         });
     });

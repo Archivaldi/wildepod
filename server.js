@@ -43,6 +43,7 @@ const moment = require('moment');
 require("dotenv").config();
 const mysql = require("mysql");
 const keys = require("./keys.js");
+const { relativeTimeThreshold } = require("moment");
 const connection = mysql.createConnection(process.env.JAWSDB_URL || keys.data);
 
 //allow sessions
@@ -893,10 +894,34 @@ app.post("/disconnect_camera/:camera_id/:camera_name", (req,res) => {
 
 app.get("/images", (req,res) => {
     if (req.session.user_level === "staff"){
-        res.render("Image_Annotation/Upload/images_page");
+        res.render("Image_Annotation/images_page");
     } else {
         res.send("You don't have a permission to get this information");
     };
+});
+
+app.get("/check_uploads/:camera_name", (req,res) => {
+    if (req.session.user_level === "staff" || req.session.user_level === "super_volunteer"){
+        let {camera_name} = req.params;
+        connection.query("SELECT up.upload_date,  up.number_of_images, us.first_name FROM Uploads AS up INNER JOIN Cameras AS cam ON cam.camera_id = up.camera_id INNER JOIN Users AS us ON up.user_id = us.user_id WHERE cam.camera_name = ? ORDER BY upload_date DESC LIMIT 1",
+        [camera_name], (err, upload) => {
+            if (err) throw err;
+            checkFieldVisit(upload[0], camera_name);
+        });
+
+        let checkFieldVisit = (upload, camera_name) => {
+            connection.query("SELECT camera_update_date, status, activity, battery_level, volunteer_name, notes FROM Camera_History WHERE camera_name = ? ORDER BY camera_update_date DESC LIMIT 1", [camera_name],
+            (err, field_visit) => {
+                let last_visit = field_visit[0];
+                if (err) throw err;
+                res.send({upload, last_visit});
+            })
+
+        };
+
+    } else {
+        res.send("Sorry. You don't have a permission to get this information");
+    }
 });
 
 app.get("/upload_images", (req,res) => {

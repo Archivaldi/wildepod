@@ -2,7 +2,7 @@
 <% include ../../partials/navbar %>
 
 <div class="cleaning_page">
-        <% for (let i = 0; i < images.length - 1; i+=4 ) { %>
+        <% for (let i = 0; i < images.length - 3; i+=4 ) { %>
                 <div class="row">
                     <div class="col-1-of-4">
                         <img style="width: 100%; height: 20rem;" src="<%= images[i].image_path %>" alt="<%= images[i].image_name %>">
@@ -22,18 +22,19 @@
                     </div>
                 </div>
         <% } %>
-
-        <div class="cleaning_page--button">
-            <button>Mark as Blank</button>
-        </div>
 </div>
+        
+        <% if (message !== "") { %>
+            <h1><%= message%></h1>
+        <% } else { %>
+            <div class="cleaning_page--btn">
+                <button class="btn cleaning_page--btn-1">Mark as Blank</button>
+                <button class="btn cleaning_page--btn-2">Stop Cleaning</button>
+            </div>
+        <% } %>
 <% include ../../partials/scripts %>
 <script>
     $("button").on("click", function() {
-        let all_id = [];
-        for (let i = 0; i < $("input").length; i++){
-            all_id.push($("input")[i].value);
-        }
         let blank = [];
         for (let i = 0; i < $("input:checked").length; i++){
             blank.push($("input:checked")[i].value);
@@ -45,12 +46,53 @@
         $.ajax({
             url: "/clean_images",
             method: "POST",
-            data: {all_id, usable, blank},
-            success: function() {
-                console.log("Sent");
+            data: {usable, blank},
+            success: function(r) {
+                console.log(r)
+
+                let cleaning_page = $(".cleaning_page");
+                    cleaning_page.empty();
+
+                if (r.message) {
+                    cleaning_page.append(`<h1>${r.message}</h1>`)
+                } else {
+                    for (let i = 0; i < r.length-3; i+=4){
+                        let row = $("<div>").attr("class", "row");
+                        for (let j = i; j <= i + 3; j++){
+                            let image_div = $("<div>").attr("class", "col-1-of-4");
+                            let img = $("<img>").attr("src", r[j].image_path).attr("alt", r[j].image_name).css("width", "100%").css("height", "20rem");
+                            let input = $("<input>").attr("type", "checkbox").attr("value", r[j].image_id);
+                            image_div.append(img, input);
+                            row.append(image_div);
+                        };
+                        cleaning_page.append(row);
+                    
+                    };
+                };
             }
         });
+    });
+
+    $("img").on("click", function() {
+        let img = $("<img>").attr("src", this.src).attr("alt", "test").attr("class", "popUp__img");
+        let div_popup = $("<div>").attr("class", "popUp");
+            div_popup.fadeIn(2000);
+            div_popup.append(img);
+        $(".cleaning_page").append(div_popup);
     })
+
+    $(document).on("click", ".popUp__img", function() {
+
+        $(".popUp").fadeOut(2000).remove();
+    });
+
+    $(".cleaning_page--btn-2").on("click", function() {
+        $.ajax({
+            url: "/stop_cleaning",
+            method: "POST",
+            success: window.location.replace("/profile")
+        })
+    });
 </script>
 </body>
 </html>

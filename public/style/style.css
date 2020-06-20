@@ -280,7 +280,7 @@ body {
   max-width: 114rem;
   margin: 0 auto; }
   .row:not(:last-child) {
-    margin-bottom: 8rem; }
+    margin-bottom: 2rem; }
   .row::after {
     content: "";
     display: table;
@@ -308,4 +308,28 @@ body {
 
 .cleaning_page {
   padding-top: 5rem;
-  padding-bottom: 5rem; }
+  padding-bottom: 5rem;
+  position: relative; }
+  .cleaning_page img {
+    cursor: pointer; }
+  .cleaning_page--btn {
+    position: absolute;
+    top: 5rem;
+    right: 3rem;
+    height: 10rem; }
+    .cleaning_page--btn-1 {
+      top: 0;
+      right: 3rem; }
+    .cleaning_page--btn-2 {
+      top: 7rem;
+      right: 3rem; }
+
+.popUp {
+  box-shadow: 0 2.5rem 4rem rgba(0, 0, 0, 0.5);
+  z-index: 20;
+  top: 5rem;
+  width: 85%;
+  position: fixed;
+  margin-bottom: 5rem; }
+  .popUp__img {
+    width: 100%; }

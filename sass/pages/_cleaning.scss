@@ -1,4 +1,39 @@
 .cleaning_page {
     padding-top: 5rem;
     padding-bottom: 5rem;
+    position: relative;
+
+    img {
+        cursor: pointer;
+    }
+
+    &--btn {
+        position: absolute;
+        top: 5rem;
+        right: 3rem;
+        height: 10rem;
+
+        &-1 {
+            top: 0;
+            right: 3rem;
+        }
+
+        &-2 {
+            top: 7rem;
+            right: 3rem;
+        }
+    }
+}
+
+.popUp {
+    box-shadow: 0 2.5rem 4rem rgba($color-black, 0.5);
+    z-index: 20;
+    top: 5rem;
+    width: 85%;
+    position: fixed;
+    margin-bottom: 5rem;
+
+    &__img {
+        width: 100%;
+    }
 }

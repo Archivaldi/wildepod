@@ -34,6 +34,9 @@ const exif = require("jpeg-exif");
 //uuid 
 const { v4: uuidv4 } = require('uuid');
 
+//recurring server work
+const schedule = require('node-schedule');
+
 //moment package for formating date
 const moment = require('moment');
 //mysql package
@@ -86,7 +89,6 @@ app.get("/login", (req, res) => {
 app.post("/login", function (req, res) {
     let user_email = req.body.email;
     let password = req.body.password;
-    console.log(user_email, password)
 
     // //Save for future changes
     // connection.query("SELECT * FROM Users where email = ? AND p_hash = ?", [user_email, password], (err, result) => {
@@ -1037,51 +1039,121 @@ app.post("/upload/:site_id/:site_full_name/:location_id/:location_name/:camera_i
 });
 
 ///////////////////////////////////////////////////           CLEANING         ///////////////////////////////////////////////////////////////
-app.get("/cleaning", (req,res) => {
-connection.query("SELECT im.image_id, im.upload_id, im.trigger_id, im.image_name, im.image_path, im.image_time FROM Images as im INNER JOIN Image_Status as imst ON im.image_id = imst.image_id WHERE imst.status = 'NEW' and imst.image_id NOT IN (SELECT image_id FROM Locked_Images) LIMIT 12", 
-(err, images) => {
+
+//stop cleaning
+app.post("/stop_cleaning", (req,res) => {
+    connection.query("DELETE FROM Locked_Images WHERE user_id = ?", [req.session.user_id], (err, result) => {
+        if (err) throw err;
+    })
+}); 
+
+//set recurring cleaning from Locked_Images table everyday at 3am
+const auto_clean_locked_images = schedule.scheduleJob({hour: 3, minute: 0}, function(){
+    connection.query("DELETE FROM Locked_Images", (err, result) => {
         if (err) throw err;
         else {
-            lockImages(images);
+            console.log(`The Locked_Images table was cleaned at 3am on ${moment().format(MM/DD/YYYY)}`);
         };
-    });
+    })
+  });
 
-    const lockImages = (images) => {
-        locked_images = [];
-        images.map(image => locked_images.push([req.session.user_id, image.image_id]));
-        connection.query("INSERT INTO Locked_Images (user_id, image_id) VALUES ?", [locked_images], (err, result) => {
-            if (err) throw err;
-            else {
-                res.render("Image_Annotation/Cleaning/cleaning_page", {images});
-            };
-        });
-    };
+app.get("/cleaning", (req,res) => {
+    if (req.session.user_id) {
+        connection.query("WITH ranked_image_status AS ( SELECT * FROM (SELECT imgst.*, ROW_NUMBER() OVER (PARTITION BY image_id ORDER BY update_time DESC) AS rn FROM Image_Status AS imgst) as st WHERE rn = 1) SELECT im.image_id, im.upload_id, im.trigger_id, im.image_name, im.image_path, im.image_time FROM Images AS im INNER JOIN ranked_image_status AS imst ON im.image_id = imst.image_id WHERE imst.status = 'New' and imst.image_id NOT IN (SELECT image_id FROM locked_images) LIMIT 12", 
+            (err, images) => {  
+                if (err) throw err;
+                else {
+                    lockImages(images);
+                };
+            });
+
+        const lockImages = (images) => {
+            if (images.length === 0){
+                res.render("Image_Annotation/Cleaning/cleaning_page", {images, message: "Looks like there are no available images to clean. Thank you!"});
+            } else {
+                locked_images = [];
+                images.map(image => locked_images.push([req.session.user_id, image.image_id]));
+                connection.query("INSERT INTO Locked_Images (user_id, image_id) VALUES ?", [locked_images], (err, result) => {
+                    if (err) throw err;
+                    else {
+                        res.render("Image_Annotation/Cleaning/cleaning_page", {images, message: ""});
+                    };
+                });
+            }
+        };
+    } else {
+        res.redirect("/");
+    }
 });
 
 //unlock images and change their status in the database
 app.post("/clean_images", (req,res) => {
-    let {all_id, usable, blank} = req.body;
-    connection.query("DELETE FROM Locked_Images WHERE image_id = ?", [all_id], (err, result) => {
-        if (err) throw err;
-        else {
-            markAsUsable();
-        };
-    });
+    let {usable, blank} = req.body;
 
-    let markAsUsable = () => {
-        connection.query("UPDATE Image_Status SET image_status = 'Usable' WHERE image_id = ?", [usable], (err, result) => {
+    if (usable === undefined){
+        usable = [];
+    } else if (blank === undefined){
+        blank = [];
+    };
+
+        connection.query("DELETE FROM Locked_Images WHERE user_id = ?", [req.session.user_id], (err, result) => {
             if (err) throw err;
             else {
-                markAsBlank();
+                markAsUsable();
             };
         });
-    };
-
-    let markAsBlank = () => {
-        connection.query("UPDATE Image_Status SET image_status = 'Blank' WHERE image_id = ?", [blank], (err, result) => {
-            console.log("All done");
-        });
-    };
+    
+        let markAsUsable = () => {
+            if (usable.length !== 0){
+                let insert_usable = [];
+                for (let i = 0; i < usable.length; i++){
+                    insert_usable.push([usable[i], moment().format("YYYY-MM-DD hh:mm:ss"), req.session.user_id, "Usable"]);
+                }
+                connection.query("INSERT INTO Image_Status (image_id, update_time, user_id, status) VALUES ?", [insert_usable], (err, result) => {
+                    if (err) throw err;
+                    else {
+                        markAsBlank();
+                    };
+                });
+            };
+        };
+    
+        let markAsBlank = () => {
+            if (blank.length !== 0){
+                let insert_blank = [];
+                for (let i = 0; i < blank.length; i++){
+                    insert_blank.push([blank[i], moment().format("YYYY-MM-DD hh:mm:ss"), req.session.user_id, "Blank"]);
+                }
+                connection.query("INSERT INTO Image_Status (image_id, update_time, user_id, status) VALUES ?", [insert_blank], (err, result) => {
+                    sendNewImages();
+                });
+            };
+        };
+    
+        let sendNewImages = () => {
+            connection.query("WITH ranked_image_status AS ( SELECT * FROM (SELECT imgst.*, ROW_NUMBER() OVER (PARTITION BY image_id ORDER BY update_time DESC) AS rn FROM Image_Status AS imgst) as st WHERE rn = 1) SELECT im.image_id, im.upload_id, im.trigger_id, im.image_name, im.image_path, im.image_time FROM Images AS im INNER JOIN ranked_image_status AS imst ON im.image_id = imst.image_id WHERE imst.status = 'New' and imst.image_id NOT IN (SELECT image_id FROM locked_images) LIMIT 12", 
+                (err, images) => {  
+                    if (err) throw err;
+                    else {
+                        lockImages(images);
+                    };
+                });
+    
+            const lockImages = (images) => {
+                if (images.length === 0){
+                    res.send({message: "Looks like there are no available images to clean. Thank you!"});
+                } else {
+                    locked_images = [];
+                    images.map(image => locked_images.push([req.session.user_id, image.image_id]));
+                    connection.query("INSERT INTO Locked_Images (user_id, image_id) VALUES ?", [locked_images], (err, result) => {
+                        if (err) throw err;
+                        else {
+                            res.send(images);
+                        };
+                    });
+                };
+            };
+        };
 });
 
 //sign out and destroy session

@@ -944,7 +944,7 @@ app.get("/properties/:property_name/locations/:location_name/info", (req,res) =>
         let property_name = req.params.property_name;
             property_name = property_name.split(" ").join("_");
         let location_name = req.params.location_name;
-        connection.query("WITH ranked_cameras AS ( select * from (select cam.*, ROW_NUMBER() OVER (PARTITION BY camera_name ORDER By camera_update_date DESC, camera_history_id ASC) AS rn from Camera_History as cam) as st where rn = 1) select p.site_short_name, p.site_full_name, lleft.location_id, lleft.location_name,p.site_id,rc.camera_id, rc.camera_name from Locations as lleft join ranked_cameras as rc on lleft.location_id = rc.location_id inner join Properties as p on lleft.site_id = p.site_id where p.site_short_name = ? AND lleft.location_name = ?",
+        connection.query("WITH ranked_cameras AS ( SELECT * FROM (select cam.*, ROW_NUMBER() OVER (PARTITION BY camera_name ORDER By camera_update_date DESC, camera_history_id ASC) AS rn FROM Camera_History as cam) AS st WHERE rn = 1) SELECT p.site_short_name, p.site_full_name, lleft.location_id, lleft.location_name,p.site_id,rc.camera_id, rc.camera_name FROM Locations AS lleft join ranked_cameras as rc on lleft.location_id = rc.location_id INNER JOIN Properties as p on lleft.site_id = p.site_id where p.site_short_name = ? AND lleft.location_name = ?",
         [property_name, location_name],
         (err, result) => {
             if (err) throw err;
@@ -1084,7 +1084,7 @@ const auto_clean_locked_images = schedule.scheduleJob({hour: 3, minute: 0}, func
 
 app.get("/cleaning", (req,res) => {
     if (req.session.user_id) {
-        connection.query("WITH ranked_image_status AS ( SELECT * FROM (SELECT imgst.*, ROW_NUMBER() OVER (PARTITION BY image_id ORDER BY update_time DESC) AS rn FROM Image_Status AS imgst) as st WHERE rn = 1) SELECT im.image_id, im.upload_id, im.trigger_id, im.image_name, im.image_path, im.image_time FROM Images AS im INNER JOIN ranked_image_status AS imst ON im.image_id = imst.image_id WHERE imst.status = 'New' and imst.image_id NOT IN (SELECT image_id FROM locked_images) LIMIT 12", 
+        connection.query("WITH ranked_image_status AS ( SELECT * FROM (SELECT imgst.*, ROW_NUMBER() OVER (PARTITION BY image_id ORDER BY update_time DESC) AS rn FROM Image_Status AS imgst) as st WHERE rn = 1) SELECT im.image_id, im.upload_id, im.trigger_id, im.image_name, im.image_path, im.image_time FROM Images AS im INNER JOIN ranked_image_status AS imst ON im.image_id = imst.image_id WHERE imst.status = 'New' and imst.image_id NOT IN (SELECT image_id FROM Locked_Images) LIMIT 12", 
             (err, images) => {  
                 if (err) throw err;
                 else {
@@ -1140,6 +1140,8 @@ app.post("/clean_images", (req,res) => {
                         markAsBlank();
                     };
                 });
+            } else {
+                markAsBlank();
             };
         };
     
@@ -1152,7 +1154,9 @@ app.post("/clean_images", (req,res) => {
                 connection.query("INSERT INTO Image_Status (image_id, update_time, user_id, status) VALUES ?", [insert_blank], (err, result) => {
                     sendNewImages();
                 });
-            };
+            } else {
+                sendNewImages();
+            }
         };
     
         let sendNewImages = () => {

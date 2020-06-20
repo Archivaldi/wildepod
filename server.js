@@ -1084,7 +1084,7 @@ const auto_clean_locked_images = schedule.scheduleJob({hour: 3, minute: 0}, func
 
 app.get("/cleaning", (req,res) => {
     if (req.session.user_id) {
-        connection.query("WITH ranked_image_status AS ( SELECT * FROM (SELECT imgst.*, ROW_NUMBER() OVER (PARTITION BY image_id ORDER BY update_time DESC) AS rn FROM Image_Status AS imgst) as st WHERE rn = 1) SELECT im.image_id, im.upload_id, im.trigger_id, im.image_name, im.image_path, im.image_time FROM Images AS im INNER JOIN ranked_image_status AS imst ON im.image_id = imst.image_id WHERE imst.status = 'New' and imst.image_id NOT IN (SELECT image_id FROM Locked_Images) LIMIT 12", 
+        connection.query("WITH ranked_image_status AS ( SELECT * FROM (SELECT imgst.*, ROW_NUMBER() OVER (PARTITION BY image_id ORDER BY update_time DESC) AS rn FROM Image_Status AS imgst) as st WHERE rn = 1) SELECT im.image_id, im.upload_id, im.trigger, im.image_name, im.image_path, im.image_time FROM Images AS im INNER JOIN ranked_image_status AS imst ON im.image_id = imst.image_id WHERE imst.status = 'New' and imst.image_id NOT IN (SELECT image_id FROM Locked_Images) LIMIT 12", 
             (err, images) => {  
                 if (err) throw err;
                 else {

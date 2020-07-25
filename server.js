@@ -44,6 +44,7 @@ require("dotenv").config();
 const mysql = require("mysql");
 const keys = require("./keys.js");
 const { relativeTimeThreshold } = require("moment");
+const { connect } = require("http2");
 const connection = mysql.createConnection(process.env.JAWSDB_URL || keys.data);
 
 //allow sessions
@@ -200,7 +201,6 @@ app.get("/addNewUser", function (req, res) {
 
 //creating new user in database
 app.post("/createNewUser", (req, res) => {
-    let user_name = req.body.user_name;
     let first_name = req.body.first_name;
     let last_name = req.body.last_name;
     let email = req.body.email;
@@ -213,7 +213,7 @@ app.post("/createNewUser", (req, res) => {
     //storing a hash of user's password
     bcrypt.genSalt(10, (err, salt) => {
         bcrypt.hash(password, salt, (err, p_hash) => {
-            connection.query("INSERT INTO Users (username, first_name, last_name, p_hash, user_level, email, phone, state, city) VALUES (?,?,?,?,?,?,?,?,?)", [user_name, first_name, last_name, p_hash, user_level, email, phone, state, city], function (err, results) {
+            connection.query("INSERT INTO Users (first_name, last_name, p_hash, user_level, email, phone, state, city) VALUES (?,?,?,?,?,?,?,?)", [first_name, last_name, p_hash, user_level, email, phone, state, city], function (err, results) {
                 if (err) { console.log(err) };
                 res.redirect("/profile");
             });
@@ -1077,14 +1077,15 @@ const auto_clean_locked_images = schedule.scheduleJob({hour: 3, minute: 0}, func
     connection.query("DELETE FROM Locked_Images", (err, result) => {
         if (err) throw err;
         else {
-            console.log(`The Locked_Images table was cleaned at 3am on ${moment().format(MM/DD/YYYY)}`);
+            console.log(`The Locked_Images table was cleaned at 3am on ${moment().format("MM/DD/YYYY")}`);
         };
     })
   });
 
+  //cleaning page
 app.get("/cleaning", (req,res) => {
     if (req.session.user_id) {
-        connection.query("WITH ranked_image_status AS ( SELECT * FROM (SELECT imgst.*, ROW_NUMBER() OVER (PARTITION BY image_id ORDER BY update_time DESC) AS rn FROM Image_Status AS imgst) as st WHERE rn = 1) SELECT im.image_id, im.upload_id, im.trigger, im.image_name, im.image_path, im.image_time FROM Images AS im INNER JOIN ranked_image_status AS imst ON im.image_id = imst.image_id WHERE imst.status = 'New' and imst.image_id NOT IN (SELECT image_id FROM Locked_Images) LIMIT 12", 
+        connection.query("WITH ranked_image_status AS ( SELECT * FROM (SELECT imgst.*, ROW_NUMBER() OVER (PARTITION BY image_id ORDER BY update_time DESC) AS rn FROM Image_Status AS imgst) as st WHERE rn = 1) SELECT im.image_id, im.upload_id, im.trigger_id, im.image_name, im.image_path, im.image_time FROM Images AS im INNER JOIN ranked_image_status AS imst ON im.image_id = imst.image_id WHERE imst.status = 'New' and imst.image_id NOT IN (SELECT image_id FROM Locked_Images) LIMIT 12", 
             (err, images) => {  
                 if (err) throw err;
                 else {
@@ -1109,6 +1110,45 @@ app.get("/cleaning", (req,res) => {
     } else {
         res.redirect("/");
     }
+});
+
+//filters for clening page with one date
+app.get("/cleaning_page/filter/:time/:date", (req,res) => {
+    if (req.session.user_id){
+        let {time, date} = req.params;
+        if (time === "before"){
+            connection.query("WITH ranked_image_status AS ( SELECT * FROM (SELECT imgst.*, ROW_NUMBER() OVER (PARTITION BY image_id ORDER By update_time DESC) AS rn FROM Image_Status AS imgst) AS st WHERE rn = 1) SELECT im.image_id, im.upload_id, im.trigger_id, im.image_name, im.image_path, im.image_time FROM Images AS im INNER JOIN ranked_image_status AS imst ON im.image_id = imst.image_id WHERE imst.status = 'New' AND im.image_time <= ? AND imst.image_id NOT IN  (SELECT image_id FROM locked_images) LIMIT 12",
+            [date], 
+            (err, result) => {
+                if (err) throw err;
+                res.send(result);
+            });
+        } else if (time = "after"){
+            connection.query("WITH ranked_image_status AS ( SELECT * FROM (SELECT imgst.*, ROW_NUMBER() OVER (PARTITION BY image_id ORDER By update_time DESC) AS rn FROM Image_Status AS imgst) AS st WHERE rn = 1) SELECT im.image_id, im.upload_id, im.trigger_id, im.image_name, im.image_path, im.image_time FROM Images AS im INNER JOIN ranked_image_status AS imst ON im.image_id = imst.image_id WHERE imst.status = 'New' AND im.image_time >= ? AND imst.image_id NOT IN  (SELECT image_id FROM locked_images) LIMIT 12",
+            [date], 
+            (err, result) => {
+                if (err) throw err;
+                res.send(result);
+            });
+        };
+    } else {
+        res.send("Please login");
+    };
+});
+
+//filters for clening page with range of dates
+app.get("cleaning_page/filter/before/:before_date/after/:after_date", (req,res) => {
+    if (req.session.user_id){
+        let {before_date, after_date} = req.params;
+        connection.query("WITH ranked_image_status AS ( SELECT * FROM (SELECT imgst.*, ROW_NUMBER() OVER (PARTITION BY image_id ORDER By update_time DESC) AS rn FROM Image_Status AS imgst) AS st WHERE rn = 1) SELECT im.image_id, im.upload_id, im.trigger_id, im.image_name, im.image_path, im.image_time FROM Images AS im INNER JOIN ranked_image_status AS imst ON im.image_id = imst.image_id WHERE imst.status = 'New' AND im.image_time <= ? AND im.image_date >= ? AND imst.image_id NOT IN  (SELECT image_id FROM locked_images) LIMIT 12",
+        [before_date, after_date],
+        (err, result) => {
+            if (err) throw err;
+            res.send(result);
+        });
+    } else {
+        res.send("Please login");
+    };
 });
 
 //unlock images and change their status in the database
@@ -1183,6 +1223,218 @@ app.post("/clean_images", (req,res) => {
                 };
             };
         };
+});
+
+////////////////////////////////////////     Categorization     ////////////////////////////////////////////////////
+
+//categorization page
+app.get("/categorization", (req,res) => {
+    if (req.session.user_id){
+        connection.query("WITH ranked_image_status AS ( SELECT * FROM ( SELECT imgst.*, ROW_NUMBER() OVER (PARTITION BY image_id ORDER By update_time DESC) AS rn  FROM Image_Status AS imgst ) AS st WHERE rn = 1) SELECT im.image_id, im.upload_id, im.trigger_id, im.image_name, im.image_path, im.image_time FROM Images AS im INNER JOIN ranked_image_status AS imst ON im.image_id = imst.image_id WHERE imst.status = 'Usable' AND imst.image_id NOT IN  (SELECT image_id FROM Locked_Images) LIMIT 20", 
+        (err, result) => {
+            if (err) throw err;
+            if (result.length === 0){
+                res.send("No unannotaited images");
+            } else {
+                let images = [result[0]];
+                for (let i = 1; i < result.length; i++){
+                    if (result[i].trigger_id === images[0].trigger_id){
+                        images.push(result[i]);
+                    };
+                };
+                lock_images(images);
+            };
+        });
+
+        const lock_images = images => {
+            let locked_images = [];
+            images.map(image => locked_images.push([req.session.user_id, image.image_id]));
+            connection.query("INSERT INTO Locked_Images (user_id, image_id) VALUES ?", [locked_images], (err, result) => {
+                if (err) throw err;
+                take_species(images)
+            });
+        };
+
+        const take_species = (images) => {
+            connection.query("SELECT * FROM Species", (err, species) => {
+                if (err) throw err;
+                res.render("Image_Annotation/Categorization/categorization_page", {images, species});
+            })
+        }
+    } else {
+        res.send("Please login");
+    }
+});
+
+//stop categorize
+app.get("/stop_categorize", (req,res) => {
+    connection.query("DELETE FROM Locked_Images WHERE user_id = ?", [req.session.user_id], (err, result) => {
+        if (err) throw err;
+        res.send("Done");
+    })
+});
+
+//take a list of species
+app.get("/species", (req,res) => {
+    if (req.session.user_id) {
+        connection.query("SELECT * FROM Species", (err, species) => {
+            if (err) throw err;
+            res.send(species);
+        })
+    } else {
+        res.send("You don't have a permission to get this information");
+    }
+});
+
+//mark as blank from caterization and review pages
+app.post("/categorization/mark_as_blank", (req,res) => {
+    if (req.session.user_id) {
+        let images = req.body.images_id;
+        let update_time = moment().format("YYYY-MM-DD hh:mm:ss");
+        for (let i = 0; i < images.length; i++){
+            images[i].push(update_time, req.session.user_id, "Blank");
+        };
+
+        //fuction to clean locked_images table
+        const unlock_images = (id) => {
+            connection.query("DELETE FROM Locked_Images WHERE user_id = ?", [id], (err, result) => {
+                if (err) throw err;
+                res.send("Blanked");
+            })
+        };
+
+
+        connection.query("INSERT INTO Image_Status (image_id, update_time, user_id, status) VALUES ?", [images],
+        (err, result) => {
+            if (err) throw err;
+            unlock_images(req.session.user_id);
+        })
+    } else {
+        res.send("You don't have a permission to get this information");
+    }
+});
+
+//insert data into annotations
+app.post("/species/insertData/:images_length", (req,res) => {
+    if (req.session.user_id){
+        let images_quantity = req.params.images_length;
+        let insert_data = [];
+        let insert_status_data = [];
+        let flag_insert_data = [];
+        let annotation_date = moment().format("YYYY-MM-DD hh:mm:ss");
+        let species_count = parseInt(req.body.species_count);
+        console.log(req.body);
+        let {is_video} = req.body;
+        let species_inputs = [];
+        let quantity_inputs = [];
+        let images_id = [];
+        for (let i = 1; i <= images_quantity; i++ ){
+            images_id.push(req.body["image_id_"+i]);
+        }
+        for (let i = 1; i <= species_count; i++){
+            species_inputs.push(req.body["species_input_" + i]);
+            quantity_inputs.push(req.body["quantity_input_"+i]);
+        };
+
+        
+        for (let i = 0; i < images_id.length; i++){
+            for (let j = 0; j < species_inputs.length; j++ ){
+                if (req.body.is_exceptional){
+                    insert_data.push([images_id[i], annotation_date, req.session.user_id, species_inputs[j], quantity_inputs[j], "1", is_video, "Human", null]);
+                } else {
+                    insert_data.push([images_id[i], annotation_date, req.session.user_id, species_inputs[j], quantity_inputs[j], "0", is_video, "Human", null]);
+                }
+            }
+            insert_status_data.push([images_id[i], annotation_date, req.session.user_id, "Annotated"]);
+
+            if (req.body.issue_type){
+                flag_insert_data.push([images_id[i], req.session.user_id, req.body.issue_type, annotation_date, "new", req.body.notes]);
+            }
+        }
+
+        //function to insert data into flags table
+        const flag_images = (data) => {
+            connection.query("INSERT INTO Flags (image_id, user_id, issue_type, issue_date, issue_status, notes) VALUES ?", [data], (err, result) => {
+                if (err) throw err;
+                res.redirect("/categorization");
+            });
+        }
+
+        //fuction to clean locked_images table
+        const unlock_images = (id) => {
+            connection.query("DELETE FROM Locked_Images WHERE user_id = ?", [id], (err, result) => {
+                if (err) throw err;
+                if (req.body.flag){
+                    flag_images(flag_insert_data);
+                } else {
+                    res.redirect("/categorization");
+                }
+            })
+        };
+
+        //save data into annotations table
+        const insert_annotations_data = (data) => {
+            connection.query("INSERT INTO Annotations (image_id, annotation_date, user_id, species_id, species_count, is_exceptional, is_video, agent, uncertainty) VALUES ?", [data], 
+            (err , result) => {
+                if (err) throw err;
+                image_status_insert(insert_status_data);
+            });
+        };
+
+        //insert data into Image_status table
+        const image_status_insert = (data) => {
+            connection.query("INSERT INTO Image_status (image_id, update_time, user_id, status) VALUES ?", [data], (err, result) => {
+                if (err) throw err;
+                unlock_images(req.session.user_id);
+            })
+        }
+
+        insert_annotations_data(insert_data);
+
+    } else {
+        res.send("You don't have a permission to get this information");
+    }
+});
+
+
+
+///////////////////////////////////////////         REVIEW PAGE       /////////////////////////////////////////////
+app.get("/review", (req,res) => {
+    if (req.session.user_level === "staff") {
+
+        const take_species = (images) => {
+            connection.query("SELECT * FROM Species", (err, species) => {
+                if (err) throw err;
+                res.render("Image_Annotation/Review/review_page", {images, species});
+            })
+        }
+
+        const lock_images = images => {
+            let locked_images = [];
+            images.map(image => locked_images.push([req.session.user_id, image.image_id]));
+            connection.query("INSERT INTO Locked_Images (user_id, image_id) VALUES ?", [locked_images], (err, result) => {
+                if (err) throw err;
+                take_species(images)
+            });
+        };
+
+        connection.query("WITH ranked_flagged_images AS ( SELECT * FROM (SELECT imgst.*, ROW_NUMBER() OVER (PARTITION BY image_id ORDER By issue_date DESC) AS rn FROM Flags AS imgst) AS st WHERE rn = 1) SELECT im.image_id, im.upload_id, im.trigger_id, im.image_name, im.image_path, im.image_time FROM Images AS im INNER JOIN ranked_flagged_images AS imst ON im.image_id = imst.image_id WHERE imst.issue_status = 'new' AND imst.image_id NOT IN  (SELECT image_id FROM Locked_Images)",
+        (err, result) => {
+            if (result.length === 0){
+                res.send("No images for review");
+            } else {
+                let images = [result[0]];
+                for (let i = 1; i < result.length; i++){
+                    if (result[i].trigger_id === images[0].trigger_id){
+                        images.push(result[i]);
+                    };
+                };
+                lock_images(images);
+            };
+        })
+    } else {
+        res.send("You don't have a permission to get this information");
+    }
 });
 
 //sign out and destroy session

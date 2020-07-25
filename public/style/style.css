@@ -277,7 +277,7 @@ body {
     transform: scale(0.95); }
 
 .row {
-  max-width: 114rem;
+  max-width: 100%;
   margin: 0 auto; }
   .row:not(:last-child) {
     margin-bottom: 2rem; }
@@ -299,6 +299,16 @@ body {
     width: calc((100% - 2rem*3)/4);
     float: left; }
     .row .col-1-of-4:not(:last-child) {
+      margin-right: 2rem; }
+  .row .col-1-of-5 {
+    width: calc((100% - 2rem*4)/5);
+    float: left; }
+    .row .col-1-of-5:not(:last-child) {
+      margin-right: 2rem; }
+  .row .col-1-of-6 {
+    width: calc((100% - 2rem*5)/6);
+    float: left; }
+    .row .col-1-of-6:not(:last-child) {
       margin-right: 2rem; }
 
 .section-about {
@@ -323,6 +333,31 @@ body {
     .cleaning_page--btn-2 {
       top: 7rem;
       right: 3rem; }
+  .cleaning_page--btn-3 {
+    position: absolute;
+    left: 10rem;
+    top: 5rem;
+    font-size: 1.6rem;
+    text-align: center;
+    font-family: 'roboto';
+    text-decoration: none; }
+    .cleaning_page--btn-3 .btn {
+      background-color: #fff;
+      color: #777; }
+
+.modal {
+  position: absolute;
+  top: 40%;
+  left: 40%;
+  transform: translate(-20%, -50%);
+  text-align: center;
+  font-family: 'roboto';
+  text-decoration: none;
+  font-size: 1.6rem;
+  border-radius: 1.5rem; }
+  .modal a.close-modal {
+    top: 0;
+    right: 0; }
 
 .popUp {
   box-shadow: 0 2.5rem 4rem rgba(0, 0, 0, 0.5);
@@ -333,3 +368,11 @@ body {
   margin-bottom: 5rem; }
   .popUp__img {
     width: 100%; }
+
+.categorization_page {
+  position: relative; }
+  .categorization_page form .flag {
+    position: absolute;
+    top: 5rem;
+    right: 30rem;
+    width: 30rem; }

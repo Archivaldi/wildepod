@@ -32,4 +32,20 @@
             margin-right: $gutter-horizontal-small;
         }
     }
+
+    .col-1-of-5 {
+        width: calc((100% - #{$gutter-horizontal-small}*4)/5);
+        float: left;
+        &:not(:last-child){
+            margin-right: $gutter-horizontal-small;
+        }
+    }
+
+    .col-1-of-6 {
+        width: calc((100% - #{$gutter-horizontal-small}*5)/6);
+        float: left;
+        &:not(:last-child){
+            margin-right: $gutter-horizontal-small;
+        }
+    }
 }

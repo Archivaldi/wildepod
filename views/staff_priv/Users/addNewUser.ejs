@@ -6,12 +6,6 @@
             <form id="main" action="/createNewUser" method="POST">
                 <div class='row'>
                     <div class='col-12'>
-                        <label for="user_name">Username: </label>
-                        <input id="user_name" type="text" name="user_name" required>
-                    </div>
-                </div>
-                <div class='row'>
-                    <div class='col-12'>
                         <label for="first_name">First name: </label>
                         <input id="first_name" type="text" name="first_name" required>
                     </div>
@@ -40,7 +34,7 @@
                         <label for="entry_volunteer">Entry </label>
                         <input id="entry_volunteer" type="radio" name="user_level" value="entry_volunteer">
                         <label for="super_volunteer ">Super volunteer  </label>
-                        <input id="super_volunteer " type="radio" name="user_level" value="super_volunteer ">
+                        <input id="super_volunteer " type="radio" name="user_level" value="super_volunteer">
                         <label for="staff ">Staff  </label>
                         <input id="staff " type="radio" name="user_level" value="staff ">
                         <label for="admin">Admin </label>
@@ -74,6 +68,5 @@
             </form>
         </div>
     </div>
-    <% include ../../partials/footer %>
 </body>
 </html>

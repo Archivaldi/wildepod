@@ -1,0 +1,399 @@
+<% include ../../partials/header %>
+<% include ../../partials/navbar %>
+
+
+<div class="categorization_page">
+
+    <form action="/species/insertData/<%= images.length%>" method="POST">
+        <div class="images_div">
+            <% for (let i = 0; i < images.length; i++) { %>
+                <img src="<%= images[i].image_path %>" meta-data="<%= images[i].image_id%>" class="images" alt="<%= images[i].image_name%>" style="width: 40%;">
+                <input type="text" value="<%= images[i].image_id%>" name="image_id_<%=i+1%>" style="display: none;">
+            <% } %>
+        </div>
+        <div class="annotation">
+            <div class="species_count"></div>
+                <label for="species_count">How many species do you see on the picture/s? </label>
+                <input id="species_count" name="species_count" onchange="append_species()" type="number" min="1" max="5" value="1" required>
+            <div class="species">
+                <div class="labels">
+                    <div class="row">
+                        <div class="col-1-of-2">
+                            <h3>Species</h3>
+                        </div>
+                        <div class="col-1-of-2">
+                            <h3>Number of individuals</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="species_rows">
+                    <div class="row">
+                        <div class="col-1-of-2">
+                            <select name="species_input_1" id="species_list" required>
+                                <option value="">Please select</option>
+                                <% species.forEach(x => { %>
+                                    <option value="<%=x.species_id%>"><%= x.common_name%></option>
+                                <%}) %>
+                            </select>
+                        </div>
+                        <div class="col-1-of-2">
+                            <input type="number" min="1" value="1" name="quantity_input_1" required>
+                        </div>
+                    </div>
+                </div>
+            </div>   
+            <div class="pic_or_vid">
+                <select name="is_video" id="is_video" required>
+                    <option value="">Please select</option>
+                    <option value="1">Video</option>
+                    <option value="0">Picture</option>
+                </select>
+            </div>
+            <div class="is_exeptional">
+                <label for="is_exceptional">Add to "Best Of" list: </label>
+                <input type="checkbox" id="is_exceptional" name="is_exceptional"> 
+            </div>
+            <div class="submit">
+                <button>Next picture</button>
+                <button type="button" onclick="stop_categorize()">Stop categorize</button>
+            </div>
+            <div class="flag">
+                <label for="flag">Flag the image</label>
+                <input type="checkbox" id="flag" name="flag" onchange="append_issue_types()">
+                <div class="issue_types"></div>
+                <div class="blank"><button onclick="mark_as_blank()" type="button">Mark as blank</button></div>
+            </div>
+        </div>
+    </form>
+        
+</div>
+
+
+<% include ../../partials/scripts %>
+
+<script>
+    let options = [];
+    const species_list = () => {
+        $.ajax({
+            url: "/species"
+        }).then(r => {
+                options.push($("<option>").attr("value", "").text("Please select"));
+                for (let j = 0; j < r.length; j++){
+                    let option = $("<option>").attr("value", r[j].species_id).text(r[j].common_name);
+                   options.push(option)
+                };
+        });
+    }
+    $(document).ready(species_list);
+
+    const stop_categorize = () => {
+        $.ajax({
+            url: "/stop_categorize"
+        }).then(() => {window.location.href = "/profile"})
+    };
+
+    const mark_as_blank = () => {
+        let images = $(".images");
+        let images_id = [];
+        for (let i = 0; i < images.length; i++){
+            images_id.push([images[i].getAttribute("meta-data")]);
+        }
+
+        $.ajax({
+            url: "/categorization/mark_as_blank",
+            method: "POST",
+            data: {images_id},
+            success: window.location.replace("/categorization")
+        })
+    }
+
+    const append_issue_types = () => {
+        let flag = $("#flag");
+        let issue_types = $(".issue_types");
+        if (flag.prop("checked") === true){
+            let label = $("<label>").attr("for", "issue_select").text("Flag the image as: ");
+            let input = $("<select>").attr("id", "issue_select").attr("name", "issue_type");
+            let option_deletable = $("<option>").attr("value","deletable").text("Deletable");
+            let option_unsure = $("<option>").attr("value", "unsure_species").text("Unsure species");
+                input.append(option_deletable, option_unsure);
+            let notes_label = $("<label>").attr("for", "notes_input").text("Notes: ").css("display", "block");
+            let notes_input = $("<textarea>").attr("id", "notes_input").attr("name", "notes").attr("max", "249").prop("required", true).css("width", "30rem").css("height", "10rem");
+                issue_types.append(label, input, notes_label, notes_input);
+                $(".blank").empty();
+        } else {
+            issue_types.empty();
+            $(".blank").append("<button onclick='mark_as_blank()'' type='button'>Mark as blank</button>");
+        }
+    }
+
+    const append_species = () => {
+        let species_count = $("#species_count").val();
+        let species_rows = $(".species_rows");
+        species_rows.empty();
+
+        const put_species = async (i) => {
+            if (i <= species_count){
+                let row = $("<div>").attr("class", "row");
+                let species_input_div = $("<div>").attr("class", "col-1-of-2");
+                let species_input = $("<select>").attr("id", "species_input_"+i).attr("name", "species_input_"+i).attr("class", "species_input").prop("required", true);
+                    for (let i = 0; i < options.length; i++){
+                        options[i].clone().appendTo(species_input);
+                    };
+                    species_input.clone().appendTo(species_input_div);
+                let quantity_div = $("<div>").attr("class", "col-1-of-3");
+                let quantity_input = $("<input>").attr("id", "quantity_input_"+i).attr("name", "quantity_input_"+i).attr("class", "quantity_input").attr("type", "number").attr("min", "1").attr("value", "1");
+                    quantity_div.append(quantity_input);
+                    row.append(species_input_div, quantity_div);
+                    species_rows.append(row);
+
+                if (i < 5){
+                    put_species(i+1)
+                }; 
+            }
+        };
+        put_species(1);
+    }
+</script>
+
+<!-- <script>
+
+    const append_count = () => {
+        let is_exceptional = $("#is_exceptional").val();
+        let count = $(".species_count");
+        count.empty();
+        $(".form").empty();
+        let label = $("<label>").attr("for", "species_count").text("How namy species do you see on the picture/s?");
+        let input = $("<input>").attr("type", "number").attr("id", "species_count").attr("onchange", "append_form()").attr("min", "1").attr("max", "5").attr("value", "0");
+        count.append(label,input);
+    };
+    
+    const append_form = () => {
+        let species_count = $("#species_count").val();
+        let species_div = $(".form");
+        species_div.empty();
+
+        let label_row = $("<div>").attr("class", "row");
+        let label_species_count_div = $("<div>").attr("class", "col-1-of-2");
+        let h3_species_count = $("<h3>").text("Species");
+            label_species_count_div.append(h3_species_count);
+        let number_of_individuals_label = $("<h3>").text("Number of individuals");
+        let label_number_of_individuals_div = $("<div>").attr("class", "col-1-1of-2");
+            label_number_of_individuals_div.append(number_of_individuals_label);
+            label_row.append(label_species_count_div, label_number_of_individuals_div);
+
+            species_div.append(label_row);
+
+        const put_species = async (i) => {
+            if (i <= species_count){
+                let row = $("<div>").attr("class", "row");
+                let species_input_div = $("<div>").attr("class", "col-1-of-2");
+                let species_input = $("<select>").attr("id", "species_input").attr("class", "species_input");
+                    // $(options).clone().appendTo(species_input);
+                    // species_input_div.append(species_input_label ,species_input);
+                    for (let i = 0; i < options.length; i++){
+                        options[i].clone().appendTo(species_input);
+                    };
+                    species_input.clone().appendTo(species_input_div);
+                let quantity_div = $("<div>").attr("class", "col-1-of-3");
+                let quantity_input = $("<input>").attr("id", "quantity_input").attr("class", "quantity_input").attr("type", "number").attr("min", "1").attr("value", "1");
+                    quantity_div.append(quantity_input);
+                    row.append(species_input_div, quantity_div);
+                    species_div.append(row);
+
+                if (i < 5){
+                    put_species(i+1)
+                }; 
+            } else {
+               let unsertainty_div = $(".unsertainty");
+                    unsertainty_div.empty();
+                let unsertainty_label = $("<label>").attr("for", "unsertainty_input").text("Unsertainty: ");
+                let unsertainty_input = $("<select>").attr("id", "unsertainty_input").attr("class", "unsertainty_input").attr("onchange", "is_picture()");
+                let default_option = $("<option>").attr("value", "").text("Please select");
+                let sure_option = $("<option>").attr("value", "100").text("Sure");
+                let unsure_option = $("<option>").attr("value", "50").text("Unsure");
+                    unsertainty_input.append(default_option, sure_option, unsure_option);
+                    unsertainty_div.append(unsertainty_label, unsertainty_input);
+            }
+        };
+
+        if (species_count > 0) {
+            put_species(1);
+        };
+
+        // let button = $("<button>").text("Submit").attr("onclick", "send_data()");
+        //     unsertainty_div.append(button);
+    };
+
+    const is_picture = () => {
+        let is_picture_div = $(".pic_or_vid");
+            is_picture_div.empty();
+        let is_pic_label = $("<label>").attr("for", "is_pic").text("Is it picture or video?");
+        let is_pic_input = $("<select>").attr("onchange", "issue()").attr("id","is_pic");
+        let default_option = $("<option>").attr("value", "").text("Please select");
+        let pic_option = $("<option>").attr("value", "0").text("Picture");
+        let vid_option = $("<option>").attr("video", "1").text("Video");
+            is_pic_input.append(default_option, pic_option, vid_option);
+            is_picture_div.append(is_pic_label, is_pic_input);
+    }
+
+    const issue = () => {
+        let issue_div = $(".issue");
+        issue_div.empty();
+        $(".submit").empty();
+        let label = $("<label>").attr("for", "issue_input").text("Do you see any problem on this picture/video? ");
+        let issue_input = $("<select>").attr("id", "issue_input").attr("onchange", "submit()");
+        let default_option = $("<option>").attr("value", "").text("Please select");
+        let none_option = $("<option>").attr("value", "none").text("None");
+        let inappropriate_option = $("<option>").attr("value", "inappropriate").text("Inappropriate");
+        let needs_review_option = $("<option>").attr("value", "needs_review").text("Needs review");
+        let wrong_cleaning_option = $("<option>").attr("value", "wrong_cleaning").text("Wrong cleaning");
+            issue_input.append(default_option, none_option, inappropriate_option, needs_review_option, wrong_cleaning_option);
+            issue_div.append(label, issue_input);
+    };
+
+    const submit = () => {
+        $(".submit").empty();
+        let unsertainty = $("#unsertainty_input").val();
+        let issue = $("#issue_input").val();
+        if (issue === "needs_review" || unsertainty === "50"){
+            let notes_label = $("<label>").attr("for", "notes").text("Notes: ");
+            let notes = $("<textarea>").attr("id", "notes").attr("max", "249").css("display", "block").css("width", "50%");
+            $(".submit").append(notes_label, notes);
+        }
+        $(".submit").append($("<button>").attr("onclick", "send_data()").text("Next picture"));
+    };
+
+    const send_data = () => {
+        let unsertainty = $("#unsertainty_input").val();
+        let issue = $("#issue_input").val();
+        let is_pic_or_vid = $("#is_pic").val();
+        let is_exceptional = $("#is_exceptional").val();
+
+        let images = $(".images");
+        let images_id = [];
+            for (let i = 0; i < images.length; i++){
+                images_id.push(images[i].getAttribute("meta-data"));
+            }
+
+        let species_count = $("#species_count").val();
+        let species_els = $(".species_input");
+        let species = [];
+            for (let i = 0; i< species_els.length; i++){
+                species.push(species_els[i].value);
+            }
+
+
+        let quantity_els = $(".quantity_input");
+        let quantity = [];
+            for (let i = 0;i < quantity_els.length; i++){
+                quantity.push(quantity_els[i].value);
+            };
+
+        let pic_or_video = $("#is_pic").val();
+
+
+
+        if (issue === "needs_review" || unsertainty === "50" ){
+            let flags_data = [];
+            let annotations_data = [];
+            let image_status_data = [];
+            let notes = $("#notes").val();
+
+            for (let i = 0; i < images_id.length; i++){
+                flags_data.push([images_id[i], issue, "new", notes]);
+                image_status_data.push([images_id[i], "annotaited"]);
+                for (let j = 0; j < species_count; j++){
+                    annotations_data.push([images_id[i], species[j], quantity[j], is_exceptional, is_pic_or_vid, "human", unsertainty])
+                }
+            };
+
+            $.ajax({
+                url: "/species/flag",
+                method: "POST",
+                data: {flags_data, annotations_data, image_status_data}
+            }).then(function(r){
+                    $(".images_div").empty();
+                    $(".species").empty();
+                    $(".species_count").empty();
+                    $(".unsertainty").empty();
+                    $(".form").empty();
+                    $(".pic_or_vid").empty();
+                    $(".issue").empty();
+                    $(".submit").empty();
+
+                    for (let i = 0; i < r.length; i++){
+                        let img = $("<img>").attr("src", r[i].image_path).attr("meta-data", r[i].image_id).attr('class', "images").attr("alt", r[i].image_name).css("width", "40%");
+                        $(".images_div").append(img);
+                    };
+
+                    let is_exceptional_label = $("<label>").attr("for", "is_exceptional").text("Is the picture of great quality?");
+                    let is_exceptional_input = $("<select>").attr('id', "is_exceptional").attr("onchange", "append_count()");
+                    let default_option = $("<option>").attr("value", "").text("Please select");
+                    let yes_option = $("<option>").attr("value", "1").text("Yes");
+                    let no_option = $("<option>").attr("value", "0").text("No");
+                        is_exceptional_input.append(default_option, yes_option, no_option);
+                    $(".species").append(is_exceptional_label, is_exceptional_input);
+            });
+
+        } else if (issue === "inappropriate" || issue === "wrong_cleaning"){
+            console.log("Should be deleted");
+        } else if (species_count === "0" || unsertainty === "" || is_pic_or_vid === "" || issue === "" || is_exceptional === ""){
+            console.log("Should select everything");
+        } else {
+            let data = [];
+            let image_status_data = [];
+
+            for (let i = 0; i < images_id.length; i++){
+                image_status_data.push([images_id[i], "annotaited"]);
+                for (let j = 0; j < species_count; j++){
+                    data.push([images_id[i], species[j], quantity[j], is_exceptional, is_pic_or_vid, "human", unsertainty])
+                }
+            }
+
+            $.ajax({
+                url: "/species/insertData",
+                method: "POST",
+                data: {data, image_status_data},
+                success: function(r){
+                    $(".images_div").empty();
+                    $(".species").empty();
+                    $(".species_count").empty();
+                    $(".unsertainty").empty();
+                    $(".form").empty();
+                    $(".pic_or_vid").empty();
+                    $(".issue").empty();
+                    $(".submit").empty();
+
+                    for (let i = 0; i < r.length; i++){
+                        let img = $("<img>").attr("src", r[i].image_path).attr("meta-data", r[i].image_id).attr('class', "images").attr("alt", r[i].image_name).css("width", "40%");
+                        $(".images_div").append(img);
+                    };
+
+                    let is_exceptional_label = $("<label>").attr("for", "is_exceptional").text("Is the picture of great quality?");
+                    let is_exceptional_input = $("<select>").attr('id', "is_exceptional").attr("onchange", "append_count()");
+                    let default_option = $("<option>").attr("value", "").text("Please select");
+                    let yes_option = $("<option>").attr("value", "1").text("Yes");
+                    let no_option = $("<option>").attr("value", "0").text("No");
+                        is_exceptional_input.append(default_option, yes_option, no_option);
+                    $(".species").append(is_exceptional_label, is_exceptional_input);
+
+                }
+            });
+        }
+
+        // if (issue === "none"){
+        //     for (let i = 0; i < images_id.length; i++){
+        //         for (let j = 0; j < species.length; j++){
+        //             data.push([images_id[i], species_count, 1, 0, "human", unsertainty[j], quantity[j]]);
+        //         };
+        //     };
+        // } else {
+        //     for (let i = 0; i < images_id.length; i++){
+        //         for (let j = 0; j < species.length; j++){
+        //             data.push([images_id[i], species_count, 0, 0, "human", unsertainty[j], quantity[j]]);
+        //         };
+        //     };
+        // };
+    
+    };
+</script> -->

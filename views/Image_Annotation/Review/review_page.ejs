@@ -1,0 +1,127 @@
+<% include ../../partials/header %>
+<% include ../../partials/navbar %>
+
+
+<div class="categorization_page">
+
+    <form action="/species/insertData/<%= images.length%>" method="POST">
+        <div class="images_div">
+            <% for (let i = 0; i < images.length; i++) { %>
+                <img src="<%= images[i].image_path %>" name="<%= images[i].image_id%>" class="images" alt="<%= images[i].image_name%>" style="width: 40%;">
+                <input type="text" value="<%= images[i].image_id%>" name="image_id_<%=i+1%>" style="display: none;">
+                <textarea name="" id="" cols="30" rows="10" value="<%= images[i].notes%>"></textarea>
+            <% } %>
+        </div>
+        <div class="annotation">
+            <div class="species_count"></div>
+                <label for="species_count">How many species do you see on the picture/s? </label>
+                <input id="species_count" name="species_count" onchange="append_species()" type="number" min="1" max="5" value="1" required>
+            <div class="species">
+                <div class="labels">
+                    <div class="row">
+                        <div class="col-1-of-2">
+                            <h3>Species</h3>
+                        </div>
+                        <div class="col-1-of-2">
+                            <h3>Number of individuals</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="species_rows">
+                    <div class="row">
+                        <div class="col-1-of-2">
+                            <select name="species_input_1" id="species_list" required>
+                                <option value="">Please select</option>
+                                <% species.forEach(x => { %>
+                                    <option value="<%=x.species_id%>"><%= x.common_name%></option>
+                                <%}) %>
+                            </select>
+                        </div>
+                        <div class="col-1-of-2">
+                            <input type="number" min="1" value="1" name="quantity_input_1" required>
+                        </div>
+                    </div>
+                </div>
+            </div>   
+            <div class="pic_or_vid">
+                <select name="is_video" id="is_video" required>
+                    <option value="">Please select</option>
+                    <option value="1">Video</option>
+                    <option value="0">Picture</option>
+                </select>
+            </div>
+            <div class="is_exeptional">
+                <label for="is_exceptional">Mark as outstanding picture: </label>
+                <input type="checkbox" id="is_exceptional" name="is_exceptional"> 
+            </div>
+            <div class="submit">
+                <button>Next picuture</button>
+            </div>
+        
+            <div class="blank"><button onclick="mark_as_blank()" type="button">Mark as blank</button></div>
+        </div>
+    </form>
+        
+</div>
+
+
+<% include ../../partials/scripts %>
+
+<script>
+    let options = [];
+    const species_list = () => {
+        $.ajax({
+            url: "/species"
+        }).then(r => {
+                options.push($("<option>").attr("value", "").text("Please select"));
+                for (let j = 0; j < r.length; j++){
+                    let option = $("<option>").attr("value", r[j].species_id).text(r[j].common_name);
+                   options.push(option)
+                };
+        });
+    }
+    $(document).ready(species_list);
+
+    const mark_as_blank = () => {
+        let images = $(".images");
+        let images_id = [];
+        for (let i = 0; i < images.length; i++){
+            images_id.push([images[i].getAttribute("meta-data")]);
+        }
+
+        $.ajax({
+            url: "/categorization/mark_as_blank",
+            method: "POST",
+            data: {images_id},
+            success: window.location.replace("/categorization")
+        })
+    }
+
+    const append_species = () => {
+        let species_count = $("#species_count").val();
+        let species_rows = $(".species_rows");
+        species_rows.empty();
+
+        const put_species = async (i) => {
+            if (i <= species_count){
+                let row = $("<div>").attr("class", "row");
+                let species_input_div = $("<div>").attr("class", "col-1-of-2");
+                let species_input = $("<select>").attr("id", "species_input_"+i).attr("name", "species_input_"+i).attr("class", "species_input").prop("required", true);
+                    for (let i = 0; i < options.length; i++){
+                        options[i].clone().appendTo(species_input);
+                    };
+                    species_input.clone().appendTo(species_input_div);
+                let quantity_div = $("<div>").attr("class", "col-1-of-3");
+                let quantity_input = $("<input>").attr("id", "quantity_input_"+i).attr("name", "quantity_input_"+i).attr("class", "quantity_input").attr("type", "number").attr("min", "1").attr("value", "1");
+                    quantity_div.append(quantity_input);
+                    row.append(species_input_div, quantity_div);
+                    species_rows.append(row);
+
+                if (i < 5){
+                    put_species(i+1)
+                }; 
+            }
+        };
+        put_species(1);
+    }
+</script>

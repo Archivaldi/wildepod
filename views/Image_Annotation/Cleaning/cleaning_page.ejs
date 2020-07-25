@@ -2,27 +2,45 @@
 <% include ../../partials/navbar %>
 
 <div class="cleaning_page">
-        <% for (let i = 0; i < images.length - 3; i+=4 ) { %>
+    <div class="images">
+        <% if (images.length % 4 === 0) { %>
+            <% for (let i = 0; i < images.length - 3; i+=4 ) { %>
+                    <div class="row">
+                        <div class="col-1-of-4">
+                            <img style="width: 100%; height: 20rem;" src="<%= images[i].image_path %>" alt="<%= images[i].image_name %>">
+                            <input type="checkbox" value="<%= images[i].image_id%>">
+                        </div>
+                        <div class="col-1-of-4">
+                            <img style="width: 100%; height: 20rem;" src="<%= images[i+1].image_path %>" alt="<%= images[i].image_name %>">
+                            <input type="checkbox" value="<%= images[i+1].image_id%>">
+                        </div>
+                        <div class="col-1-of-4">
+                            <img style="width: 100%; height: 20rem;" src="<%= images[i+1].image_path %>" alt="<%= images[i].image_name %>">
+                            <input type="checkbox" value="<%= images[i+2].image_id%>">
+                        </div>
+                        <div class="col-1-of-4">
+                            <img style="width: 100%; height: 20rem;" src="<%= images[i+1].image_path %>" alt="<%= images[i].image_name %>">
+                            <input type="checkbox" value="<%= images[i+3].image_id%>">
+                        </div>
+                    </div>
+            <% } %>
+        <% } else if (images.length%3 === 0) { %>
+            <% for (let i = 0; i < images.length - 2; i+=3) {%>
                 <div class="row">
-                    <div class="col-1-of-4">
-                        <img style="width: 100%; height: 20rem;" src="<%= images[i].image_path %>" alt="<%= images[i].image_name %>">
-                        <input type="checkbox" value="<%= images[i].image_id%>">
+                    <div class="col-1-of-3">
+                        <img style="width: 100%; height: 30rem;" src="<%= images[i].image_path%>" alt="images[i].image_name">
                     </div>
-                    <div class="col-1-of-4">
-                        <img style="width: 100%; height: 20rem;" src="<%= images[i+1].image_path %>" alt="<%= images[i].image_name %>">
-                        <input type="checkbox" value="<%= images[i+1].image_id%>">
+                    <div class="col-1-of-3">
+                        <img style="width: 100%; height: 30rem;" src="<%= images[i+1].image_path%>" alt="images[i+1].image_name">
                     </div>
-                    <div class="col-1-of-4">
-                        <img style="width: 100%; height: 20rem;" src="<%= images[i+1].image_path %>" alt="<%= images[i].image_name %>">
-                        <input type="checkbox" value="<%= images[i+2].image_id%>">
-                    </div>
-                    <div class="col-1-of-4">
-                        <img style="width: 100%; height: 20rem;" src="<%= images[i+1].image_path %>" alt="<%= images[i].image_name %>">
-                        <input type="checkbox" value="<%= images[i+3].image_id%>">
+                    <div class="col-1-of-3">
+                        <img style="width: 100%; height: 30rem;" src="<%= images[i+2].image_path%>" alt="images[i+2].image_name">
                     </div>
                 </div>
+            <% } %>
+        <% } else { %>
         <% } %>
-</div>
+    </div>
         
         <% if (message !== "") { %>
             <h1><%= message%></h1>
@@ -31,24 +49,165 @@
                 <button class="btn cleaning_page--btn-1">Mark as Blank</button>
                 <button class="btn cleaning_page--btn-2">Stop Cleaning</button>
             </div>
+            <div id="filter" class="modal">
+                <div class="text-center">Filter by dates</div>
+                <div class="row">
+                    <div class="col-1-of-2">
+                        <label for="before_date">Before: </label>
+                    </div>
+                    <div class="col-1-of-2">
+                        <input type="date" id="before_date">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-1-of-2">
+                        <label for="after_date">After: </label>
+                    </div>
+                    <div class="col-1-of-2">
+                        <input type="date" id="after_date">
+                    </div>
+                </div>
+                <a href="#" onclick="implement_filter()" rel="modal:close">Filter</a>
+                <!-- <input type="date" name="date">
+                <a href="#" rel="modal:close">Close</a> -->
+            </div>
+            <div class="cleaning_page--btn-3">
+                <a class="btn" href="#filter" rel="modal:open">Filter</a>
+            </div>
         <% } %>
+</div>
 <% include ../../partials/scripts %>
 <script>
+
+    function implement_filter() {
+        let before_date = $("#before_date").val();
+        let after_date = $("#after_date").val();
+        if (before_date && !after_date) {
+            $.ajax({
+                url: `/cleaning_page/filter/before/${before_date}`,
+                method: "GET",
+                success: function(r) {
+                    let images = $(".images");
+                        images.empty();
+
+                    if (r.length === 0) {
+                        images.append("<h1>No result found</h1>");
+                    } else {
+                        for (let i = 0; i <r.length - 3; i += 4) {
+                            let row = $("<div>").attr("class", "row");
+                            let img_div_1 = $("<div>").attr("class", "col-1-of-4");
+                            let img_1 = $("<img>").attr("src", r[i].image_path).attr("alt", r[i].image_name).css("width", "100%").css("height", "20rem");
+                            let input_img_1 = $("<input>").attr("value", r[i].image_id).attr("type", "checkbox");
+                                img_div_1.append(img_1, input_img_1);
+                            let img_div_2 = $("<div>").attr("class", "col-1-of-4");
+                            let img_2 = $("<img>").attr("src", r[i+1].image_path).attr("alt", r[i+1].image_name).css("width", "100%").css("height", "20rem");
+                            let input_img_2 = $("<input>").attr("value", r[i].image_id).attr("type", "checkbox");
+                                img_div_2.append(img_2, input_img_2);
+                            let img_div_3 = $("<div>").attr("class", "col-1-of-4");
+                            let img_3 = $("<img>").attr("src", r[i+2].image_path).attr("alt", r[i+2].image_name).css("width", "100%").css("height", "20rem");
+                            let input_img_3 = $("<input>").attr("value", r[i].image_id).attr("type", "checkbox");
+                                img_div_3.append(img_3, input_img_3);
+                            let img_div_4 = $("<div>").attr("class", "col-1-of-4");
+                            let img_4 = $("<img>").attr("src", r[i+3].image_path).attr("alt", r[i+3].image_name).css("width", "100%").css("height", "20rem");
+                            let input_img_4 = $("<input>").attr("value", r[i].image_id).attr("type", "checkbox");
+                                img_div_4.append(img_4, input_img_4);
+                                row.append(img_div_1, img_div_2, img_div_3, img_div_4);
+                                images.append(row);
+
+                        };
+                    }
+                }
+            })
+        } else if (!before_date && after_date) {
+            $.ajax({
+                url: `/cleaning_page/filter/after/${after_date}`,
+                method: "GET",
+                success: function(r) {
+                    let images = $(".images");
+                        images.empty();
+
+                    if (r.length === 0) {
+                        images.append("<h1>No result found</h1>");
+                    } else {
+                        for (let i = 0; i <r.length - 3; i += 4) {
+                            let row = $("<div>").attr("class", "row");
+                            let img_div_1 = $("<div>").attr("class", "col-1-of-4");
+                            let img_1 = $("<img>").attr("src", r[i].image_path).attr("alt", r[i].image_name).css("width", "100%").css("height", "20rem");
+                            let input_img_1 = $("<input>").attr("value", r[i].image_id).attr("type", "checkbox");
+                                img_div_1.append(img_1, input_img_1);
+                            let img_div_2 = $("<div>").attr("class", "col-1-of-4");
+                            let img_2 = $("<img>").attr("src", r[i+1].image_path).attr("alt", r[i+1].image_name).css("width", "100%").css("height", "20rem");
+                            let input_img_2 = $("<input>").attr("value", r[i].image_id).attr("type", "checkbox");
+                                img_div_2.append(img_2, input_img_2);
+                            let img_div_3 = $("<div>").attr("class", "col-1-of-4");
+                            let img_3 = $("<img>").attr("src", r[i+2].image_path).attr("alt", r[i+2].image_name).css("width", "100%").css("height", "20rem");
+                            let input_img_3 = $("<input>").attr("value", r[i].image_id).attr("type", "checkbox");
+                                img_div_3.append(img_3, input_img_3);
+                            let img_div_4 = $("<div>").attr("class", "col-1-of-4");
+                            let img_4 = $("<img>").attr("src", r[i+3].image_path).attr("alt", r[i+3].image_name).css("width", "100%").css("height", "20rem");
+                            let input_img_4 = $("<input>").attr("value", r[i].image_id).attr("type", "checkbox");
+                                img_div_4.append(img_4, input_img_4);
+                                row.append(img_div_1, img_div_2, img_div_3, img_div_4);
+                                images.append(row);
+
+                        };
+
+                    }
+                }
+            })
+        } else if (before_date && after_date) {
+            $.ajax({
+                url: `/cleaning_page/filter/before/${before_date}/after/${after_date}`,
+                method: "GET",
+                success: function(r) {
+                    let images = $(".images");
+                        images.empty();
+
+                    if (r.length === 0) {
+                        images.append("<h1>No result found</h1>");
+                    } else {
+                        for (let i = 0; i <r.length - 3; i += 4) {
+                            let row = $("<div>").attr("class", "row");
+                            let img_div_1 = $("<div>").attr("class", "col-1-of-4");
+                            let img_1 = $("<img>").attr("src", r[i].image_path).attr("alt", r[i].image_name).css("width", "100%").css("height", "20rem");
+                            let input_img_1 = $("<input>").attr("value", r[i].image_id).attr("type", "checkbox");
+                                img_div_1.append(img_1, input_img_1);
+                            let img_div_2 = $("<div>").attr("class", "col-1-of-4");
+                            let img_2 = $("<img>").attr("src", r[i+1].image_path).attr("alt", r[i+1].image_name).css("width", "100%").css("height", "20rem");
+                            let input_img_2 = $("<input>").attr("value", r[i].image_id).attr("type", "checkbox");
+                                img_div_2.append(img_2, input_img_2);
+                            let img_div_3 = $("<div>").attr("class", "col-1-of-4");
+                            let img_3 = $("<img>").attr("src", r[i+2].image_path).attr("alt", r[i+2].image_name).css("width", "100%").css("height", "20rem");
+                            let input_img_3 = $("<input>").attr("value", r[i].image_id).attr("type", "checkbox");
+                                img_div_3.append(img_3, input_img_3);
+                            let img_div_4 = $("<div>").attr("class", "col-1-of-4");
+                            let img_4 = $("<img>").attr("src", r[i+3].image_path).attr("alt", r[i+3].image_name).css("width", "100%").css("height", "20rem");
+                            let input_img_4 = $("<input>").attr("value", r[i].image_id).attr("type", "checkbox");
+                                img_div_4.append(img_4, input_img_4);
+                                row.append(img_div_1, img_div_2, img_div_3, img_div_4);
+                                images.append(row);
+
+                        };  
+                    };
+                }
+            });
+        };
+    };
+
     $(".cleaning_page--btn-1").on("click", function() {
         let blank = [];
-        for (let i = 0; i < $("input:checked").length; i++){
-            blank.push($("input:checked")[i].value);
+        for (let i = 0; i < $("input[type=checkbox]:checked").length; i++){
+            blank.push($("input[type=checkbox]:checked")[i].value);
         }
         let usable = [];
-        for (let i = 0; i < $("input:not(:checked)").length; i++){
-            usable.push($("input:not(:checked)")[i].value);
+        for (let i = 0; i < $("input[type=checkbox]:not(:checked)").length; i++){
+            usable.push($("input[type=checkbox]:not(:checked)")[i].value);
         }
         $.ajax({
             url: "/clean_images",
             method: "POST",
             data: {usable, blank},
             success: function(r) {
-                console.log(r)
 
                 let cleaning_page = $(".cleaning_page");
                     cleaning_page.empty();
@@ -73,7 +232,7 @@
         });
     });
 
-    $("img").on("click", function() {
+    $(document).on("click", "img", function() {
         let img = $("<img>").attr("src", this.src).attr("alt", "test").attr("class", "popUp__img");
         let div_popup = $("<div>").attr("class", "popUp");
             div_popup.fadeIn(2000);

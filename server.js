@@ -1323,7 +1323,6 @@ app.post("/species/insertData/:images_length", (req,res) => {
         let flag_insert_data = [];
         let annotation_date = moment().format("YYYY-MM-DD hh:mm:ss");
         let species_count = parseInt(req.body.species_count);
-        console.log(req.body);
         let {is_video} = req.body;
         let species_inputs = [];
         let quantity_inputs = [];

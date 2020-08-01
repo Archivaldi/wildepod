@@ -56,16 +56,3 @@
         right: 0;
     }
 }
-
-.popUp {
-    box-shadow: 0 2.5rem 4rem rgba($color-black, 0.5);
-    z-index: 20;
-    top: 5rem;
-    width: 85%;
-    position: fixed;
-    margin-bottom: 5rem;
-
-    &__img {
-        width: 100%;
-    }
-}

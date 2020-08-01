@@ -1259,7 +1259,7 @@ app.get("/categorization", (req,res) => {
             connection.query("SELECT * FROM Species", (err, species) => {
                 if (err) throw err;
                 res.render("Image_Annotation/Categorization/categorization_page", {images, species});
-            })
+            });
         };
     } else {
         res.send("Please login");

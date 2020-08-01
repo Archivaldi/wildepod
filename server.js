@@ -1260,7 +1260,7 @@ app.get("/categorization", (req,res) => {
                 if (err) throw err;
                 res.render("Image_Annotation/Categorization/categorization_page", {images, species});
             })
-        }
+        };
     } else {
         res.send("Please login");
     }

@@ -276,6 +276,16 @@ body {
   .composition:hover .composition__photo:not(:hover) {
     transform: scale(0.95); }
 
+.popUp {
+  box-shadow: 0 2.5rem 4rem rgba(0, 0, 0, 0.5);
+  z-index: 20;
+  top: 5rem;
+  width: 85%;
+  position: fixed;
+  margin-bottom: 5rem; }
+  .popUp__img {
+    width: 100%; }
+
 .row {
   max-width: 100%;
   margin: 0 auto; }
@@ -311,6 +321,41 @@ body {
     .row .col-1-of-6:not(:last-child) {
       margin-right: 2rem; }
 
+.modal {
+  position: absolute;
+  top: 15%;
+  left: 15%;
+  width: 70%;
+  height: 70%;
+  max-width: 80%;
+  text-align: center;
+  font-family: 'roboto';
+  text-decoration: none;
+  font-size: 1.6rem;
+  border-radius: 1.5rem;
+  overflow: scroll; }
+  .modal img {
+    height: 100%;
+    width: 100%; }
+  .modal a.close-modal {
+    top: 0;
+    right: 0; }
+  .modal .zoom {
+    display: inline;
+    border-radius: 100px;
+    width: 5rem;
+    height: 5rem;
+    background-color: #fff;
+    position: relative; }
+    .modal .zoom_in {
+      position: fixed;
+      bottom: 20rem;
+      left: 90rem; }
+    .modal .zoom_out {
+      position: fixed;
+      bottom: 20rem;
+      left: 84rem; }
+
 .section-about {
   background-color: #f7f7f7;
   padding: 25rem 0;
@@ -345,34 +390,15 @@ body {
       background-color: #fff;
       color: #777; }
 
-.modal {
-  position: absolute;
-  top: 40%;
-  left: 40%;
-  transform: translate(-20%, -50%);
-  text-align: center;
-  font-family: 'roboto';
-  text-decoration: none;
-  font-size: 1.6rem;
-  border-radius: 1.5rem; }
-  .modal a.close-modal {
-    top: 0;
-    right: 0; }
-
-.popUp {
-  box-shadow: 0 2.5rem 4rem rgba(0, 0, 0, 0.5);
-  z-index: 20;
-  top: 5rem;
-  width: 85%;
-  position: fixed;
-  margin-bottom: 5rem; }
-  .popUp__img {
-    width: 100%; }
-
 .categorization_page {
   position: relative; }
-  .categorization_page form .flag {
+  .categorization_page .flag {
     position: absolute;
     top: 5rem;
     right: 30rem;
     width: 30rem; }
+
+.finish_categorize {
+  position: absolute;
+  bottom: 5rem;
+  right: 10rem; }

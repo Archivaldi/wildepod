@@ -2,49 +2,62 @@
 <% include ../../partials/navbar %>
 
 <div class="cleaning_page">
-    <div class="images">
-        <% if (images.length % 4 === 0) { %>
-            <% for (let i = 0; i < images.length - 3; i+=4 ) { %>
-                    <div class="row">
-                        <div class="col-1-of-4">
-                            <img style="width: 100%; height: 20rem;" src="<%= images[i].image_path %>" alt="<%= images[i].image_name %>">
-                            <input type="checkbox" value="<%= images[i].image_id%>">
-                        </div>
-                        <div class="col-1-of-4">
-                            <img style="width: 100%; height: 20rem;" src="<%= images[i+1].image_path %>" alt="<%= images[i].image_name %>">
-                            <input type="checkbox" value="<%= images[i+1].image_id%>">
-                        </div>
-                        <div class="col-1-of-4">
-                            <img style="width: 100%; height: 20rem;" src="<%= images[i+1].image_path %>" alt="<%= images[i].image_name %>">
-                            <input type="checkbox" value="<%= images[i+2].image_id%>">
-                        </div>
-                        <div class="col-1-of-4">
-                            <img style="width: 100%; height: 20rem;" src="<%= images[i+1].image_path %>" alt="<%= images[i].image_name %>">
-                            <input type="checkbox" value="<%= images[i+3].image_id%>">
-                        </div>
-                    </div>
-            <% } %>
-        <% } else if (images.length%3 === 0) { %>
-            <% for (let i = 0; i < images.length - 2; i+=3) {%>
-                <div class="row">
-                    <div class="col-1-of-3">
-                        <img style="width: 100%; height: 30rem;" src="<%= images[i].image_path%>" alt="images[i].image_name">
-                    </div>
-                    <div class="col-1-of-3">
-                        <img style="width: 100%; height: 30rem;" src="<%= images[i+1].image_path%>" alt="images[i+1].image_name">
-                    </div>
-                    <div class="col-1-of-3">
-                        <img style="width: 100%; height: 30rem;" src="<%= images[i+2].image_path%>" alt="images[i+2].image_name">
-                    </div>
-                </div>
-            <% } %>
-        <% } else { %>
-        <% } %>
-    </div>
         
         <% if (message !== "") { %>
             <h1><%= message%></h1>
         <% } else { %>
+                <div class="images">
+                    <% for (let i = 0; i < images.length - 3; i+=4 ) { %>
+                            <div class="row">
+                                <div class="col-1-of-4">
+                                        <a href="#<%= images[i].image_id%>" rel="modal:open">
+                                            <img style="width: 100%; height: 20rem;" src="<%= images[i].image_path %>" alt="<%= images[i].image_name %>">
+                                        </a>
+                                    <input type="checkbox" value="<%= images[i].image_id%>">
+                                </div>
+                                <div class="col-1-of-4">
+                                    <a href="#<%= images[i+1].image_id%>" rel="modal:open">
+                                        <img style="width: 100%; height: 20rem;" src="<%= images[i+1].image_path %>" alt="<%= images[i+1].image_name %>">
+                                    </a>
+                                    <input type="checkbox" value="<%= images[i+1].image_id%>">
+                                </div>
+                                <div class="col-1-of-4">
+                                    <a href="#<%= images[i+2].image_id%>" rel="modal:open">
+                                        <img style="width: 100%; height: 20rem;" src="<%= images[i+2].image_path %>" alt="<%= images[i+2].image_name %>">
+                                    </a>
+                                    <input type="checkbox" value="<%= images[i+2].image_id%>">
+                                </div>
+                                <div class="col-1-of-4">
+                                    <a href="#<%= images[i+3].image_id%>" rel="modal:open">
+                                        <img style="width: 100%; height: 20rem;" src="<%= images[i+3].image_path %>" alt="<%= images[i+3].image_name %>">
+                                    </a>
+                                    <input type="checkbox" value="<%= images[i+3].image_id%>">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div id="<%= images[i].image_id%>" class="modal">
+                                    <img src="<%= images[i].image_path %>" alt="<%= images[i].image_name %>">
+                                    <button class="zoom zoom_out">+</button>
+                                    <button class="zoom zoom_in">-</button>
+                                </div>
+                                <div id="<%= images[i+1].image_id%>" class="modal">
+                                    <img src="<%= images[i+1].image_path %>" alt="<%= images[i+1].image_name %>">
+                                    <button class="zoom zoom_out">+</button>
+                                    <button class="zoom zoom_in">-</button>
+                                </div>
+                                <div id="<%= images[i+2].image_id%>" class="modal">
+                                    <img src="<%= images[i+2].image_path %>" alt="<%= images[i+2].image_name %>">
+                                    <button class="zoom zoom_out">+</button>
+                                    <button class="zoom zoom_in">-</button>
+                                </div>
+                                <div id="<%= images[i+3].image_id%>" class="modal">
+                                    <img src="<%= images[i+3].image_path %>" alt="<%= images[i+3].image_name %>">
+                                    <button class="zoom zoom_out">+</button>
+                                    <button class="zoom zoom_in">-</button>
+                                </div>
+                            </div>
+                    <% } %>
+            </div>
             <div class="cleaning_page--btn">
                 <button class="btn cleaning_page--btn-1">Mark as Blank</button>
                 <button class="btn cleaning_page--btn-2">Stop Cleaning</button>
@@ -209,8 +222,8 @@
             data: {usable, blank},
             success: function(r) {
 
-                let cleaning_page = $(".cleaning_page");
-                    cleaning_page.empty();
+                let images = $(".images");
+                    images.empty();
 
                 if (r.message) {
                     cleaning_page.append(`<h1>${r.message}</h1>`)
@@ -224,25 +237,12 @@
                             image_div.append(img, input);
                             row.append(image_div);
                         };
-                        cleaning_page.append(row);
+                        images.append(row);
                     
                     };
                 };
             }
         });
-    });
-
-    $(document).on("click", "img", function() {
-        let img = $("<img>").attr("src", this.src).attr("alt", "test").attr("class", "popUp__img");
-        let div_popup = $("<div>").attr("class", "popUp");
-            div_popup.fadeIn(2000);
-            div_popup.append(img);
-        $(".cleaning_page").append(div_popup);
-    })
-
-    $(document).on("click", ".popUp__img", function() {
-
-        $(".popUp").fadeOut(2000).remove();
     });
 
     $(".cleaning_page--btn-2").on("click", function() {
@@ -251,6 +251,20 @@
             method: "POST",
             success: window.location.replace("/profile")
         })
+    });
+
+    $(".zoom_in").on("click", function() {
+        let img = $(this).parent().children().eq(0);
+        let currentHeight = parseInt(img.css("height"));
+        let currentWidth = parseInt(img.css("width"));
+        img.css("height", currentHeight-20+"px").css("width", currentWidth-20+"px");
+    });
+
+    $(".zoom_out").on("click", function() {
+        let img = $(this).parent().children().eq(0);
+        let currentHeight = parseInt(img.css("height"));
+        let currentWidth = parseInt(img.css("width"));
+        img.css("height", currentHeight+20+"px").css("width", currentWidth+20+"px");
     });
 </script>
 </body>

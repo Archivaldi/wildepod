@@ -39,20 +39,3 @@
         } 
     }
 }
-
-.modal {
-    position: absolute;
-    top: 40%;
-    left: 40%;
-    transform: translate(-20%, -50%);
-    text-align: center;
-    font-family: 'roboto';
-    text-decoration: none;
-    font-size: $default-font-size;
-    border-radius: 1.5rem;
-
-    a.close-modal {
-        top: 0;
-        right: 0;
-    }
-}

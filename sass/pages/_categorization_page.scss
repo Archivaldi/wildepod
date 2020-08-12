@@ -1,11 +1,15 @@
 .categorization_page {
     position: relative;
-    form {
         .flag {
             position: absolute;
             top: 5rem;
             right: 30rem;
             width: 30rem;
         }
-    }
+}
+
+.finish_categorize {
+    position: absolute;
+    bottom: 5rem;
+    right: 10rem;
 }

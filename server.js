@@ -45,6 +45,7 @@ const mysql = require("mysql");
 const keys = require("./keys.js");
 const { relativeTimeThreshold } = require("moment");
 const { connect } = require("http2");
+const { captureRejectionSymbol } = require("events");
 const connection = mysql.createConnection(process.env.JAWSDB_URL || keys.data);
 
 //allow sessions
@@ -1052,7 +1053,7 @@ app.post("/upload/:site_id/:site_full_name/:location_id/:location_name/:camera_i
 
     //insert all values into Image_Status table
     let insert_into_Image_Status = (values) => {
-        connection.query("INSERT INTO Image_Status (image_id, update_time, user_id, status) VALUES ?",
+        connection.query("INSERT INTO Image_Status (image_id, update_time, user_id, category) VALUES ?",
         [values],
         (err, result) => {
             if (err) throw err.sqlMessage;
@@ -1085,7 +1086,7 @@ const auto_clean_locked_images = schedule.scheduleJob({hour: 3, minute: 0}, func
   //cleaning page
 app.get("/cleaning", (req,res) => {
     if (req.session.user_id) {
-        connection.query("WITH ranked_image_status AS ( SELECT * FROM (SELECT imgst.*, ROW_NUMBER() OVER (PARTITION BY image_id ORDER BY update_time DESC) AS rn FROM Image_Status AS imgst) as st WHERE rn = 1) SELECT im.image_id, im.upload_id, im.trigger_id, im.image_name, im.image_path, im.image_time FROM Images AS im INNER JOIN ranked_image_status AS imst ON im.image_id = imst.image_id WHERE imst.status = 'New' and imst.image_id NOT IN (SELECT image_id FROM Locked_Images) LIMIT 12", 
+        connection.query("WITH ranked_image_status AS ( SELECT * FROM (SELECT imgst.*, ROW_NUMBER() OVER (PARTITION BY image_id ORDER BY update_time DESC) AS rn FROM Image_Status AS imgst) as st WHERE rn = 1) SELECT im.image_id, im.upload_id, im.trigger_id, im.image_name, im.image_path, im.image_time FROM Images AS im INNER JOIN ranked_image_status AS imst ON im.image_id = imst.image_id WHERE imst.category = 'New' and imst.image_id NOT IN (SELECT image_id FROM Locked_Images) LIMIT 12", 
             (err, images) => {  
                 if (err) throw err;
                 else {
@@ -1174,7 +1175,7 @@ app.post("/clean_images", (req,res) => {
                 for (let i = 0; i < usable.length; i++){
                     insert_usable.push([usable[i], moment().format("YYYY-MM-DD hh:mm:ss"), req.session.user_id, "Usable"]);
                 }
-                connection.query("INSERT INTO Image_Status (image_id, update_time, user_id, status) VALUES ?", [insert_usable], (err, result) => {
+                connection.query("INSERT INTO Image_Status (image_id, update_time, user_id, category) VALUES ?", [insert_usable], (err, result) => {
                     if (err) throw err;
                     else {
                         markAsBlank();
@@ -1191,7 +1192,7 @@ app.post("/clean_images", (req,res) => {
                 for (let i = 0; i < blank.length; i++){
                     insert_blank.push([blank[i], moment().format("YYYY-MM-DD hh:mm:ss"), req.session.user_id, "Blank"]);
                 }
-                connection.query("INSERT INTO Image_Status (image_id, update_time, user_id, status) VALUES ?", [insert_blank], (err, result) => {
+                connection.query("INSERT INTO Image_Status (image_id, update_time, user_id, category) VALUES ?", [insert_blank], (err, result) => {
                     sendNewImages();
                 });
             } else {
@@ -1200,7 +1201,7 @@ app.post("/clean_images", (req,res) => {
         };
     
         let sendNewImages = () => {
-            connection.query("WITH ranked_image_status AS ( SELECT * FROM (SELECT imgst.*, ROW_NUMBER() OVER (PARTITION BY image_id ORDER BY update_time DESC) AS rn FROM Image_Status AS imgst) as st WHERE rn = 1) SELECT im.image_id, im.upload_id, im.trigger_id, im.image_name, im.image_path, im.image_time FROM Images AS im INNER JOIN ranked_image_status AS imst ON im.image_id = imst.image_id WHERE imst.status = 'New' and imst.image_id NOT IN (SELECT image_id FROM locked_images) LIMIT 12", 
+            connection.query("WITH ranked_image_status AS ( SELECT * FROM (SELECT imgst.*, ROW_NUMBER() OVER (PARTITION BY image_id ORDER BY update_time DESC) AS rn FROM Image_Status AS imgst) as st WHERE rn = 1) SELECT im.image_id, im.upload_id, im.trigger_id, im.image_name, im.image_path, im.image_time FROM Images AS im INNER JOIN ranked_image_status AS imst ON im.image_id = imst.image_id WHERE imst.category = 'New' and imst.image_id NOT IN (SELECT image_id FROM locked_images) LIMIT 12", 
                 (err, images) => {  
                     if (err) throw err;
                     else {
@@ -1227,21 +1228,24 @@ app.post("/clean_images", (req,res) => {
 
 ////////////////////////////////////////     Categorization     ////////////////////////////////////////////////////
 
-//categorization page
+//categoriation page
 app.get("/categorization", (req,res) => {
+    if (req.session.user_id) {
+        res.render("Image_Annotation/Categorization/categorization_page");
+    } else {
+        res.send("Please login");
+    }
+});
+
+//take images for categorization page and set up the local storage
+app.get("/categorization/images", (req,res) => {
     if (req.session.user_id){
-        connection.query("WITH ranked_image_status AS ( SELECT * FROM ( SELECT imgst.*, ROW_NUMBER() OVER (PARTITION BY image_id ORDER By update_time DESC) AS rn  FROM Image_Status AS imgst ) AS st WHERE rn = 1) SELECT im.image_id, im.upload_id, im.trigger_id, im.image_name, im.image_path, im.image_time FROM Images AS im INNER JOIN ranked_image_status AS imst ON im.image_id = imst.image_id WHERE imst.status = 'Usable' AND imst.image_id NOT IN  (SELECT image_id FROM Locked_Images) LIMIT 20", 
-        (err, result) => {
+        connection.query("WITH ranked_image_status AS ( SELECT * FROM ( SELECT imgst.*, ROW_NUMBER() OVER (PARTITION BY image_id ORDER By update_time DESC) AS rn  FROM Image_Status AS imgst ) AS st WHERE rn = 1) SELECT im.image_id, im.upload_id, im.trigger_id, im.image_name, im.image_path, im.image_time FROM Images AS im INNER JOIN ranked_image_status AS imst ON im.image_id = imst.image_id WHERE imst.category = 'Usable' AND imst.image_id NOT IN  (SELECT image_id FROM Locked_Images) LIMIT 50", 
+        (err, images) => {
             if (err) throw err;
-            if (result.length === 0){
+            if (images.length === 0){
                 res.send("No unannotaited images");
             } else {
-                let images = [result[0]];
-                for (let i = 1; i < result.length; i++){
-                    if (result[i].trigger_id === images[0].trigger_id){
-                        images.push(result[i]);
-                    };
-                };
                 lock_images(images);
             };
         });
@@ -1258,7 +1262,7 @@ app.get("/categorization", (req,res) => {
         const take_species = (images) => {
             connection.query("SELECT * FROM Species", (err, species) => {
                 if (err) throw err;
-                res.render("Image_Annotation/Categorization/categorization_page", {images, species});
+                res.send([images, species, req.session.user_id]);
             });
         };
     } else {
@@ -1267,11 +1271,41 @@ app.get("/categorization", (req,res) => {
 });
 
 //stop categorize
-app.get("/stop_categorize", (req,res) => {
-    connection.query("DELETE FROM Locked_Images WHERE user_id = ?", [req.session.user_id], (err, result) => {
+app.post("/stop_categorize", (req,res) => {
+    let data = req.body.data;
+    let annotations = data[0];
+    let image_statuses = data[1];
+    
+    connection.query("INSERT INTO Annotations (image_id, annotation_date, user_id, species_id, species_count, is_exceptional, is_video, agent) VALUES ?", [annotations],
+    (err, result) => {
         if (err) throw err;
-        res.send("Done");
-    })
+        insert_image_statuses();
+    });
+
+    const insert_image_statuses = () => {
+        connection.query("INSERT INTO Image_Status (image_id, user_id, update_time, category) VALUES ?", [image_statuses], (err, result) => {
+            if (err) throw err;
+            if (data[2]){
+                insert_flags(data[2]);
+            } else {
+                unlock_images();
+            }
+        })
+    };
+
+    const insert_flags = (flags) => {
+        connection.query("INSERT INTO Flags (issue_status, image_id, user_id, issue_type, issue_date, notes) VALUES ?", [flags], (err, result) => {
+            if (err) throw err;
+            unlock_images();
+        });
+    };
+
+    const unlock_images = () => {
+        connection.query("DELETE FROM Locked_Images WHERE user_id = ?", [req.session.user_id], (err, result) => {
+            if (err) throw err;
+            res.send("Done");
+        })
+    };
 });
 
 //take a list of species
@@ -1304,7 +1338,7 @@ app.post("/categorization/mark_as_blank", (req,res) => {
         };
 
 
-        connection.query("INSERT INTO Image_Status (image_id, update_time, user_id, status) VALUES ?", [images],
+        connection.query("INSERT INTO Image_Status (image_id, update_time, user_id, category) VALUES ?", [images],
         (err, result) => {
             if (err) throw err;
             unlock_images(req.session.user_id);
@@ -1382,7 +1416,7 @@ app.post("/species/insertData/:images_length", (req,res) => {
 
         //insert data into Image_status table
         const image_status_insert = (data) => {
-            connection.query("INSERT INTO Image_status (image_id, update_time, user_id, status) VALUES ?", [data], (err, result) => {
+            connection.query("INSERT INTO Image_status (image_id, update_time, user_id, category) VALUES ?", [data], (err, result) => {
                 if (err) throw err;
                 unlock_images(req.session.user_id);
             })

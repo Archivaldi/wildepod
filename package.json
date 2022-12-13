@@ -9,7 +9,7 @@
     "decompress": "4.2.1",
     "dotenv": "8.2.0",
     "ejs": "2.7.1",
-    "express": "4.17.1",
+    "express": "4.17.3",
     "express-fileupload": "1.1.7-alpha.3",
     "express-session": "1.17.0",
     "extract-zip": "2.0.1",
